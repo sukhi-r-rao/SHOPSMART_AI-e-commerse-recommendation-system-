@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Payments</title>
+</head>
+<body>
+
+<h1>Payments</h1>
+
+<table border="1">
+
+<tr>
+    <th>ID</th>
+    <th>Order</th>
+    <th>Amount</th>
+    <th>Method</th>
+    <th>Status</th>
+</tr>
+
+{% for payment in payments %}
+
+<tr>
+    <td>{{ payment.payment_id }}</td>
+    <td>{{ payment.order_id }}</td>
+    <td>{{ payment.amount }}</td>
+    <td>{{ payment.payment_method }}</td>
+    <td>{{ payment.payment_status }}</td>
+</tr>
+
+{% endfor %}
+
+</table>
+
+</body>
+</html>

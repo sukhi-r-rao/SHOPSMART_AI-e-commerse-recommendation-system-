@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Manage Products</title>
+</head>
+<body>
+
+<h1>Manage Products</h1>
+
+<table border="1">
+
+<tr>
+    <th>ID</th>
+    <th>Name</th>
+    <th>Price</th>
+    <th>Stock</th>
+</tr>
+
+{% for product in products %}
+
+<tr>
+    <td>{{ product.product_id }}</td>
+    <td>{{ product.product_name }}</td>
+    <td>{{ product.price }}</td>
+    <td>{{ product.stock }}</td>
+</tr>
+
+{% endfor %}
+
+</table>
+
+</body>
+</html>

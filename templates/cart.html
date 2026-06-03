@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>My Cart</title>
+</head>
+<body>
+
+<h1>My Shopping Cart</h1>
+
+{% for item in cart_items %}
+
+<div style="
+border:1px solid black;
+padding:15px;
+margin:15px;
+width:300px;
+">
+
+<h2>{{ item.product_name }}</h2>
+
+<p>
+Price:
+₹{{ item.price }}
+</p>
+
+<p>
+Quantity:
+{{ item.quantity }}
+</p>
+
+</div>
+
+{% endfor %}
+
+</body>
+</html>
+<br>
+
+<a href="/checkout">
+    Checkout
+</a>

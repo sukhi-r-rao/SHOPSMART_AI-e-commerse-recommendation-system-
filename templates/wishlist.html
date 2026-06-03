@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Wishlist</title>
+</head>
+<body>
+
+<h1>My Wishlist</h1>
+
+{% for item in wishlist_items %}
+
+<div style="
+border:1px solid black;
+padding:15px;
+margin:15px;
+width:300px;
+">
+
+<h2>{{ item.product_name }}</h2>
+
+<p>₹{{ item.price }}</p>
+
+<a href="/wishlist/remove/{{ item.wishlist_id }}">
+Remove
+</a>
+
+</div>
+
+{% endfor %}
+
+</body>
+</html>
