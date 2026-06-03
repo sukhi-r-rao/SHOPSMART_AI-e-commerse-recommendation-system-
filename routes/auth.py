@@ -2,6 +2,8 @@ from flask import Blueprint
 from flask import render_template
 from flask import request
 from flask import session
+from flask import redirect
+from flask import flash
 
 from werkzeug.security import generate_password_hash
 from werkzeug.security import check_password_hash
@@ -45,10 +47,8 @@ def register():
             existing_user = cursor.fetchone()
 
             if existing_user:
-                return """
-                <h1>Email Already Registered</h1>
-                <a href="/register">Try Again</a>
-                """
+                flash('This email is already registered. Please sign in.', 'error')
+                return redirect('/register')
 
             query = """
             INSERT INTO users
@@ -78,16 +78,12 @@ def register():
 
             conn.commit()
 
-            return """
-            <h1>User Registered Successfully</h1>
-
-            <a href="/login">
-                Go To Login
-            </a>
-            """
+            flash('Account created successfully! Please sign in.', 'success')
+            return redirect('/login')
 
         except Exception as e:
-            return str(e)
+            flash(f'Registration error: {str(e)}', 'error')
+            return redirect('/register')
 
         finally:
             cursor.close()
@@ -136,21 +132,10 @@ def login():
                 session["user_id"] = user["user_id"]
                 session["user_name"] = user["first_name"]
 
-                return """
-                <h1>Login Successful</h1>
+                return redirect('/profile')
 
-                <a href="/profile">
-                    Go To Profile
-                </a>
-                """
-
-        return """
-        <h1>Invalid Email or Password</h1>
-
-        <a href="/login">
-            Try Again
-        </a>
-        """
+        flash('Invalid email or password. Please try again.', 'error')
+        return redirect('/login')
 
     return render_template("login.html")
 
@@ -163,11 +148,5 @@ def login():
 def logout():
 
     session.clear()
-
-    return """
-    <h1>Logged Out Successfully</h1>
-
-    <a href="/login">
-        Login Again
-    </a>
-    """
+    flash('You have been logged out successfully.', 'success')
+    return redirect('/login')

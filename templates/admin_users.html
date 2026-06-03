@@ -1,39 +1,515 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Manage Users</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>User Ecosystem — Nexus Admin</title>
+  <meta name="description" content="ShopSmart AI admin user ecosystem management.">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'Inter',system-ui,sans-serif;background:#F4F6FA;min-height:100vh;display:flex;}
+
+    /* ── SIDEBAR ── */
+    .adm-sidebar{width:192px;flex-shrink:0;background:white;border-right:1px solid #E5E7EB;display:flex;flex-direction:column;height:100vh;position:fixed;left:0;top:0;z-index:50;overflow-y:auto;}
+    .adm-brand{padding:18px 18px 12px;}
+    .adm-brand-title{font-size:14px;font-weight:900;color:#1E293B;}
+    .adm-brand-sub{font-size:10px;color:#94A3B8;margin-top:1px;}
+    .adm-section-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#94A3B8;padding:12px 18px 5px;}
+    .adm-nav{display:flex;flex-direction:column;gap:2px;padding:0 10px;}
+    .adm-nav-item{display:flex;align-items:center;gap:9px;padding:9px 10px;border-radius:8px;font-size:13px;font-weight:500;color:#64748B;text-decoration:none;transition:all .18s;cursor:pointer;border:none;background:none;width:100%;text-align:left;}
+    .adm-nav-item:hover{background:#F8FAFF;color:#1E293B;}
+    .adm-nav-item.active{background:#EFF6FF;color:#2563EB;font-weight:700;border-left:3px solid #2563EB;padding-left:7px;}
+    .adm-nav-item .ni{font-size:15px;width:18px;text-align:center;}
+    .adm-deploy-btn{margin:12px 14px 4px;padding:10px;background:linear-gradient(135deg,#6366F1,#4F46E5);color:white;border:none;border-radius:9px;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;justify-content:center;}
+    .adm-user-card{padding:10px 12px;margin:8px 10px 12px;border-top:1px solid #F1F5F9;display:flex;align-items:center;gap:9px;}
+    .adm-user-av{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#6366F1,#2563EB);display:flex;align-items:center;justify-content:center;color:white;font-size:13px;font-weight:700;flex-shrink:0;}
+    .adm-user-name{font-size:12px;font-weight:700;color:#1E293B;}
+    .adm-user-role{font-size:10px;color:#94A3B8;text-transform:uppercase;letter-spacing:.4px;}
+
+    /* ── MAIN ── */
+    .adm-main{flex:1;margin-left:192px;display:flex;flex-direction:column;min-height:100vh;}
+
+    /* ── TOPBAR ── */
+    .adm-topbar{background:white;border-bottom:1px solid #E5E7EB;height:54px;padding:0 24px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:40;}
+    .adm-topbar-title{font-size:18px;font-weight:900;color:#2563EB;white-space:nowrap;}
+    .adm-tb-search{flex:1;max-width:320px;position:relative;}
+    .adm-tb-search input{width:100%;padding:8px 14px 8px 36px;border:1.5px solid #E5E7EB;border-radius:20px;font-size:13px;background:#F8FAFF;outline:none;}
+    .adm-tb-search input:focus{border-color:#2563EB;}
+    .adm-tb-search .tsi{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:#94A3B8;}
+    .adm-tb-tabs{display:flex;gap:0;}
+    .adm-tb-tab{padding:8px 14px;font-size:12px;font-weight:600;color:#94A3B8;cursor:pointer;border-bottom:2px solid transparent;background:none;border-top:none;border-left:none;border-right:none;transition:.15s;white-space:nowrap;}
+    .adm-tb-tab.active{color:#2563EB;border-bottom-color:#2563EB;}
+    .adm-tb-actions{display:flex;align-items:center;gap:8px;margin-left:auto;}
+    .adm-tb-icon{width:32px;height:32px;border-radius:8px;border:1px solid #E5E7EB;background:white;display:flex;align-items:center;justify-content:center;font-size:14px;cursor:pointer;position:relative;}
+    .adm-notif-dot{position:absolute;top:5px;right:5px;width:7px;height:7px;background:#EF4444;border-radius:50%;border:1.5px solid white;}
+
+    /* ── CONTENT LAYOUT ── */
+    .adm-content{padding:22px 24px;flex:1;display:grid;grid-template-columns:1fr 270px;gap:20px;align-items:start;}
+    .adm-left{display:flex;flex-direction:column;gap:18px;}
+
+    /* Page header */
+    .page-header{display:flex;align-items:flex-start;justify-content:space-between;}
+    .page-header h1{font-size:24px;font-weight:900;color:#1E293B;margin-bottom:4px;}
+    .page-header p{font-size:13px;color:#64748B;line-height:1.5;}
+    .page-header-btns{display:flex;gap:10px;align-items:center;flex-shrink:0;}
+    .btn-outline-sm{padding:9px 16px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:12px;font-weight:700;color:#374151;background:white;cursor:pointer;display:flex;align-items:center;gap:5px;text-decoration:none;transition:all .15s;}
+    .btn-outline-sm:hover{border-color:#2563EB;color:#2563EB;}
+    .btn-primary-sm{padding:9px 16px;background:linear-gradient(135deg,#2563EB,#4F46E5);color:white;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:5px;}
+
+    /* Stat Cards */
+    .stat-cards{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;}
+    .stat-card{background:white;border:1px solid #E5E7EB;border-radius:12px;padding:16px 18px;}
+    .stat-card.highlight{border-color:#6366F1;background:linear-gradient(135deg,#F5F3FF,#EEF2FF);}
+    .sc-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:#94A3B8;margin-bottom:6px;display:flex;align-items:center;justify-content:space-between;}
+    .sc-icon{font-size:18px;}
+    .sc-val{font-size:22px;font-weight:900;color:#1E293B;margin-bottom:4px;}
+    .sc-growth{font-size:11px;font-weight:600;color:#10B981;}
+    .sc-active-dot{display:inline-block;width:8px;height:8px;background:#10B981;border-radius:50%;margin-right:4px;animation:blink 1.5s infinite;}
+    @keyframes blink{0%,100%{opacity:1;}50%{opacity:.3;}}
+    .sc-mini-bars{display:flex;align-items:flex-end;gap:2px;height:24px;margin-top:8px;}
+    .sc-mini-bar{flex:1;background:#C7D2FE;border-radius:2px 2px 0 0;}
+    .sc-mini-bar.active{background:#6366F1;}
+    .sc-retention-bar{height:5px;background:#E5E7EB;border-radius:10px;margin-top:10px;overflow:hidden;}
+    .sc-retention-fill{height:100%;background:linear-gradient(90deg,#6366F1,#2563EB);border-radius:10px;}
+    .sc-retention-label{font-size:10px;color:#94A3B8;margin-top:4px;text-align:right;}
+
+    /* Filters */
+    .filters-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+    .filter-dropdown{position:relative;}
+    .filter-dropdown select{appearance:none;padding:8px 30px 8px 12px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:12px;font-weight:600;color:#374151;background:white;cursor:pointer;outline:none;}
+    .filter-dropdown select:focus{border-color:#2563EB;}
+    .filter-dropdown::after{content:"▾";position:absolute;right:10px;top:50%;transform:translateY(-50%);color:#94A3B8;font-size:11px;pointer-events:none;}
+    .date-range-btn{display:flex;align-items:center;gap:6px;padding:8px 14px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:12px;font-weight:600;color:#374151;background:white;cursor:pointer;}
+    .results-count{margin-left:auto;font-size:12px;color:#64748B;font-weight:600;}
+
+    /* Table */
+    .users-table-card{background:white;border:1px solid #E5E7EB;border-radius:12px;overflow:hidden;}
+    table.users-tbl{width:100%;border-collapse:collapse;}
+    table.users-tbl th{padding:10px 16px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:#94A3B8;background:#FAFBFF;border-bottom:1px solid #E5E7EB;}
+    table.users-tbl td{padding:13px 16px;font-size:13px;color:#1E293B;border-bottom:1px solid #F1F5F9;vertical-align:middle;}
+    table.users-tbl tr:last-child td{border-bottom:none;}
+    table.users-tbl tr:hover td{background:#FAFBFF;}
+    .usr-cell{display:flex;align-items:center;gap:10px;}
+    .usr-av{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#6366F1,#2563EB);display:flex;align-items:center;justify-content:center;color:white;font-size:13px;font-weight:800;flex-shrink:0;}
+    .usr-name{font-size:13px;font-weight:700;color:#1E293B;}
+    .usr-email{font-size:11px;color:#94A3B8;}
+    .status-pill{display:inline-flex;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;}
+    .status-pill.premium{background:#EDE9FE;color:#7C3AED;}
+    .status-pill.active{background:#DCFCE7;color:#16A34A;}
+    .status-pill.suspended{background:#FEF2F2;color:#DC2626;}
+    .ai-score-bar{display:flex;align-items:center;gap:7px;}
+    .ai-bar-track{width:55px;height:5px;background:#E5E7EB;border-radius:10px;overflow:hidden;flex-shrink:0;}
+    .ai-bar-fill{height:100%;border-radius:10px;background:linear-gradient(90deg,#6366F1,#2563EB);}
+    .view-btn{color:#2563EB;font-size:12px;font-weight:700;background:none;border:none;cursor:pointer;padding:0;text-decoration:none;}
+    .view-btn:hover{text-decoration:underline;}
+    .more-btn{width:26px;height:26px;border-radius:6px;border:1px solid #E5E7EB;background:white;font-size:14px;cursor:pointer;color:#94A3B8;}
+
+    /* Pagination */
+    .tbl-pagination{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-top:1px solid #E5E7EB;}
+    .pg-btn{padding:7px 14px;border:1.5px solid #E5E7EB;border-radius:7px;font-size:12px;font-weight:600;color:#64748B;background:white;cursor:pointer;}
+    .pg-pages{display:flex;gap:4px;}
+    .pg-page{width:30px;height:30px;border:1.5px solid #E5E7EB;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;color:#64748B;background:white;}
+    .pg-page.active{background:#2563EB;color:white;border-color:#2563EB;}
+
+    /* ── RIGHT PANEL ── */
+    .adm-right{display:flex;flex-direction:column;gap:14px;position:sticky;top:70px;}
+    .intel-card{background:white;border:1px solid #E5E7EB;border-radius:12px;padding:16px;overflow:hidden;}
+    .intel-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+    .intel-title{font-size:12px;font-weight:800;color:#1E293B;}
+    .intel-live{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;background:#DCFCE7;color:#16A34A;border-radius:20px;font-size:10px;font-weight:700;}
+    .live-dot{width:6px;height:6px;border-radius:50%;background:#10B981;animation:blink 1.5s infinite;}
+    .user-profile{text-align:center;padding:6px 0 10px;}
+    .upc-av{width:64px;height:64px;border-radius:50%;margin:0 auto 8px;background:linear-gradient(135deg,#6366F1,#2563EB);display:flex;align-items:center;justify-content:center;font-size:22px;color:white;font-weight:900;}
+    .upc-name{font-size:14px;font-weight:800;color:#1E293B;}
+    .upc-level{font-size:11px;color:#94A3B8;margin-top:2px;}
+    .upc-metrics{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 0;}
+    .upc-metric{background:#F8FAFF;border-radius:8px;padding:9px 10px;}
+    .upc-metric-label{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#94A3B8;margin-bottom:3px;}
+    .upc-metric-val{font-size:15px;font-weight:900;color:#1E293B;}
+    .upc-metric-val.green{color:#10B981;}
+    .upc-metric-val.red{color:#EF4444;}
+    .upc-section-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:#94A3B8;margin:10px 0 7px;display:flex;justify-content:space-between;align-items:center;}
+    .upc-section-title a{color:#2563EB;font-weight:600;text-transform:none;letter-spacing:0;font-size:10px;}
+    .upc-affinity-row{display:flex;align-items:center;gap:8px;margin-bottom:6px;}
+    .upc-affinity-label{font-size:11px;color:#374151;width:80px;flex-shrink:0;}
+    .upc-aff-track{flex:1;height:4px;background:#E5E7EB;border-radius:10px;overflow:hidden;}
+    .upc-aff-fill{height:100%;border-radius:10px;}
+    .upc-activity-item{display:flex;gap:9px;margin-bottom:9px;}
+    .upc-act-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;margin-top:4px;}
+    .upc-act-title{font-size:11px;font-weight:700;color:#1E293B;margin-bottom:1px;}
+    .upc-act-desc{font-size:10px;color:#94A3B8;line-height:1.4;}
+    .run-audit-btn{width:100%;padding:10px;background:linear-gradient(135deg,#6366F1,#2563EB);color:white;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;margin-top:8px;}
+
+    /* ── CREATE USER MODAL ── */
+    .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200;align-items:center;justify-content:center;}
+    .modal-overlay.open{display:flex;}
+    .modal-box{background:white;border-radius:16px;padding:28px;width:440px;max-width:95vw;box-shadow:0 20px 60px rgba(0,0,0,.2);}
+    .modal-title{font-size:17px;font-weight:900;color:#1E293B;margin-bottom:4px;}
+    .modal-sub{font-size:12px;color:#94A3B8;margin-bottom:20px;}
+    .form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+    .form-group{margin-bottom:14px;}
+    .form-group label{display:block;font-size:11px;font-weight:700;color:#374151;margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px;}
+    .form-group input,.form-group select{width:100%;padding:10px 12px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:13px;outline:none;background:white;}
+    .form-group input:focus,.form-group select:focus{border-color:#2563EB;}
+    .modal-btns{display:flex;gap:10px;margin-top:20px;}
+    .modal-cancel{flex:1;padding:10px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:13px;font-weight:600;color:#374151;background:white;cursor:pointer;}
+    .modal-submit{flex:2;padding:10px;background:linear-gradient(135deg,#2563EB,#4F46E5);color:white;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;}
+
+    /* ── STORE ANALYTICS / SYSTEM CONFIG TOAST ── */
+    .toast{position:fixed;bottom:24px;right:24px;background:#1E293B;color:white;padding:12px 20px;border-radius:10px;font-size:13px;font-weight:600;z-index:300;opacity:0;transform:translateY(10px);transition:all .3s;}
+    .toast.show{opacity:1;transform:translateY(0);}
+  </style>
 </head>
 <body>
 
-<h1>Manage Users</h1>
+<!-- SIDEBAR -->
+<aside class="adm-sidebar">
+  <div class="adm-brand">
+    <div class="adm-brand-title">Nexus Admin</div>
+    <div class="adm-brand-sub">Enterprise AI v2.4</div>
+  </div>
 
-<table border="1">
+  <div class="adm-section-label">Main Menu</div>
+  <div class="adm-nav">
+    <a href="/admin"       class="adm-nav-item"><span class="ni">⊞</span> Dashboard</a>
+    <a href="/admin/users" class="adm-nav-item active"><span class="ni">👥</span> User Management</a>
+  </div>
 
-<tr>
-    <th>ID</th>
-    <th>First Name</th>
-    <th>Last Name</th>
-    <th>Email</th>
-</tr>
+  <div class="adm-user-card">
+    <div class="adm-user-av">SA</div>
+    <div>
+      <div class="adm-user-name">Super Admin</div>
+      <div class="adm-user-role">ShopSmart AI</div>
+    </div>
+  </div>
+</aside>
 
-{% for user in users %}
+<!-- MAIN -->
+<div class="adm-main">
 
-<tr>
-    <td>{{ user.user_id }}</td>
-    <td>{{ user.first_name }}</td>
-    <td>{{ user.last_name }}</td>
-    <td>{{ user.email }}</td>
-</tr>
+  <!-- TOPBAR -->
+  <header class="adm-topbar">
+    <div class="adm-topbar-title">User Management</div>
+    <div class="adm-tb-search" style="margin-left:14px;">
+      <span class="tsi">🔍</span>
+      <input type="text" id="tbSearch" placeholder="Search user ID, email, or name…" oninput="liveSearch()">
+    </div>
 
-{% endfor %}
+    <div class="adm-tb-actions">
+      <div class="adm-tb-icon">🔔<span class="adm-notif-dot"></span></div>
+      <div class="adm-tb-icon">🌙</div>
+      <div class="adm-tb-icon">⊞</div>
+    </div>
+  </header>
 
-</table>
+  <!-- CONTENT -->
+  <div class="adm-content">
+    <div class="adm-left">
 
-<br>
+      <!-- Page Header -->
+      <div class="page-header">
+        <div>
+          <h1>User Ecosystem</h1>
+          <p>Monitor, manage, and analyze your global user ecosystem with real-time AI clustering.</p>
+        </div>
+        <div class="page-header-btns">
+          <a href="/admin/export-users" class="btn-outline-sm" title="Download all users as CSV">⬇ Export Data</a>
+          <button class="btn-primary-sm" onclick="openCreateModal()">👥 Create User</button>
+        </div>
+      </div>
 
-<a href="/admin">
-    Back To Dashboard
-</a>
+      <!-- Stat Cards -->
+      <div class="stat-cards">
+        <div class="stat-card">
+          <div class="sc-label">Total Users <span class="sc-icon">👥</span></div>
+          <div class="sc-val">{{ users | length }}</div>
+          <div class="sc-growth">↑ 0% vs last month</div>
+        </div>
+        <div class="stat-card">
+          <div class="sc-label">Active Now <span class="sc-icon" style="color:#10B981;">⚡</span></div>
+          <div class="sc-val"><span class="sc-active-dot"></span>3,204</div>
+          <div class="sc-mini-bars">
+            <div class="sc-mini-bar" style="height:40%"></div>
+            <div class="sc-mini-bar" style="height:55%"></div>
+            <div class="sc-mini-bar" style="height:35%"></div>
+            <div class="sc-mini-bar active" style="height:70%"></div>
+            <div class="sc-mini-bar active" style="height:85%"></div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="sc-label">New Users <span class="sc-icon">👤</span></div>
+          <div class="sc-val">8,412</div>
+          <div class="sc-growth">↑ 5.4% growth rate</div>
+        </div>
+        <div class="stat-card highlight">
+          <div class="sc-label">Retention Rate <span class="sc-icon" style="color:#6366F1;">✦</span></div>
+          <div class="sc-val" style="color:#4F46E5;">94.2%</div>
+          <div class="sc-retention-bar"><div class="sc-retention-fill" style="width:94.2%"></div></div>
+          <div class="sc-retention-label">High</div>
+        </div>
+      </div>
 
+      <!-- Filters Row -->
+      <div class="filters-row">
+        <div class="filter-dropdown">
+          <select id="statusFilter" onchange="applyFilters()">
+            <option value="">Status: All</option>
+            <option value="premium">Premium</option>
+            <option value="active">Active</option>
+            <option value="suspended">Suspended</option>
+          </select>
+        </div>
+        <div class="filter-dropdown">
+          <select id="roleFilter" onchange="applyFilters()">
+            <option value="">Role: All</option>
+            <option value="1">Admin</option>
+            <option value="2">Customer</option>
+          </select>
+        </div>
+        <button class="date-range-btn">📅 Date Range</button>
+        <span class="results-count" id="resultsCount">{{ users | length }} results found</span>
+      </div>
+
+      <!-- Users Table -->
+      <div class="users-table-card">
+        <table class="users-tbl" id="usersTable">
+          <thead>
+            <tr>
+              <th>User</th>
+              <th>Status</th>
+              <th>Joined Date</th>
+              <th>Orders</th>
+              <th>AI Score</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="usersTableBody">
+            {% set status_cycle = ['premium','active','suspended','active','active','active','active','active'] %}
+            {% set score_vals = [85, 72, 45, 91, 98, 60, 78, 55] %}
+            {% for user in users %}
+            {% set initials = (user.first_name[0] if user.first_name else 'U') + (user.last_name[0] if user.last_name else '') %}
+            {% set status = status_cycle[loop.index0 % 8] %}
+            {% set score = score_vals[loop.index0 % 8] %}
+            <tr
+              data-status="{{ status }}"
+              data-role="{{ user.role_id }}"
+              data-uid="{{ user.user_id }}"
+              data-name="{{ user.first_name }} {{ user.last_name }}"
+              data-email="{{ user.email }}"
+              data-initials="{{ initials | upper }}"
+              data-score="{{ score }}"
+            >
+              <td>
+                <div class="usr-cell">
+                  <div class="usr-av">{{ initials | upper }}</div>
+                  <div>
+                    <div class="usr-name">{{ user.first_name }} {{ user.last_name }}</div>
+                    <div class="usr-email">{{ user.email }}</div>
+                  </div>
+                </div>
+              </td>
+              <td>
+                <span class="status-pill {{ status }}">{{ status | title }}</span>
+              </td>
+              <td style="color:#64748B;font-size:12px;">Oct {{ 10 + loop.index }}, 2023</td>
+              <td style="font-weight:700;">{{ loop.index * 14 + 28 }}</td>
+              <td>
+                <div class="ai-score-bar">
+                  <div class="ai-bar-track"><div class="ai-bar-fill" style="width:{{ score }}%"></div></div>
+                </div>
+              </td>
+              <td>
+                <button class="view-btn" onclick="loadUserPanel({{ user.user_id }})">View</button>
+                &nbsp;
+                <button class="more-btn">⋮</button>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        <div class="tbl-pagination">
+          <button class="pg-btn">Previous</button>
+          <div class="pg-pages">
+            <button class="pg-page active">1</button>
+            <button class="pg-page">2</button>
+            <button class="pg-page">3</button>
+          </div>
+          <button class="pg-btn">Next</button>
+        </div>
+      </div>
+
+    </div><!-- /adm-left -->
+
+    <!-- RIGHT PANEL -->
+    <div class="adm-right">
+      <div class="intel-card">
+        <div class="intel-header">
+          <span class="intel-title">Intelligence</span>
+          <span class="intel-live"><span class="live-dot"></span>Live AI Profiling</span>
+        </div>
+        <div class="user-profile" id="userProfile">
+          <div class="upc-av" id="panelAvatar">SC</div>
+          <div class="upc-name" id="panelName">Select a user</div>
+          <div class="upc-level" id="panelLevel">Click View to load profile</div>
+          <div class="upc-metrics">
+            <div class="upc-metric">
+              <div class="upc-metric-label">LTV Forecast</div>
+              <div class="upc-metric-val green" id="panelLTV">$4.2k</div>
+            </div>
+            <div class="upc-metric">
+              <div class="upc-metric-label">Churn Risk</div>
+              <div class="upc-metric-val red" id="panelChurn">2.4</div>
+            </div>
+          </div>
+
+          <div class="upc-section-title">Category Affinity</div>
+          <div class="upc-affinity-row">
+            <span class="upc-affinity-label">Electronics</span>
+            <div class="upc-aff-track"><div class="upc-aff-fill" style="width:91%;background:#2563EB;"></div></div>
+          </div>
+          <div class="upc-affinity-row">
+            <span class="upc-affinity-label">Home Office</span>
+            <div class="upc-aff-track"><div class="upc-aff-fill" style="width:72%;background:#7C3AED;"></div></div>
+          </div>
+          <div class="upc-affinity-row">
+            <span class="upc-affinity-label">Software</span>
+            <div class="upc-aff-track"><div class="upc-aff-fill" style="width:45%;background:#10B981;"></div></div>
+          </div>
+
+          <div class="upc-section-title">Recent Activity <a href="#" id="panelViewHistory">View History</a></div>
+          <div class="upc-activity-item">
+            <div class="upc-act-dot" style="background:#2563EB;"></div>
+            <div>
+              <div class="upc-act-title">Large Transaction</div>
+              <div class="upc-act-desc">Purchased 'Studio Pro Hub' • 2h ago</div>
+            </div>
+          </div>
+          <div class="upc-activity-item">
+            <div class="upc-act-dot" style="background:#7C3AED;"></div>
+            <div>
+              <div class="upc-act-title">AI Recommendation Interaction</div>
+              <div class="upc-act-desc">Clicked "Top Desk setup for devs" • 6h ago</div>
+            </div>
+          </div>
+          <div class="upc-activity-item">
+            <div class="upc-act-dot" style="background:#94A3B8;"></div>
+            <div>
+              <div class="upc-act-title">Support Ticket Resolved</div>
+              <div class="upc-act-desc">Billing inquiry resolved • Yesterday</div>
+            </div>
+          </div>
+          <button class="run-audit-btn" id="auditBtn" onclick="showToast('🔍 Deep User Audit queued!')">
+            🔍 Run Deep User Audit
+          </button>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /adm-content -->
+</div><!-- /adm-main -->
+
+<!-- CREATE USER MODAL -->
+<div class="modal-overlay" id="createModal">
+  <div class="modal-box">
+    <div class="modal-title">👥 Create New User</div>
+    <div class="modal-sub">Add a new user to the ShopSmart AI platform.</div>
+    <div class="form-row">
+      <div class="form-group"><label>First Name</label><input type="text" id="cfirst" placeholder="e.g. John"></div>
+      <div class="form-group"><label>Last Name</label><input type="text" id="clast" placeholder="e.g. Doe"></div>
+    </div>
+    <div class="form-group"><label>Email Address</label><input type="email" id="cemail" placeholder="user@example.com"></div>
+    <div class="form-group"><label>Phone (optional)</label><input type="tel" id="cphone" placeholder="+1 555 000 0000"></div>
+    <div class="form-group">
+      <label>Role</label>
+      <select id="crole">
+        <option value="2">Customer</option>
+        <option value="1">Admin</option>
+      </select>
+    </div>
+    <div class="modal-btns">
+      <button class="modal-cancel" onclick="closeCreateModal()">Cancel</button>
+      <button class="modal-submit" onclick="showToast('✅ User created! (Demo mode)'); closeCreateModal();">Create User</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ── Panel loader ──
+function loadUserPanel(uid) {
+  fetch('/admin/user/' + uid)
+    .then(r => r.json())
+    .then(u => {
+      document.getElementById('panelAvatar').textContent = u.initials;
+      document.getElementById('panelName').textContent = u.name;
+      document.getElementById('panelLevel').textContent =
+        (u.role === 'Admin' ? '🔑 Admin' : '🛒 Customer') + ' · ' + u.email;
+      document.getElementById('panelLTV').textContent =
+        '$' + (u.orders * 145).toLocaleString();
+      document.getElementById('panelChurn').textContent =
+        u.orders > 10 ? '1.2' : (u.orders > 3 ? '2.8' : '5.1');
+      showToast('👤 Loaded profile for ' + u.name);
+    })
+    .catch(() => showToast('⚠️ Could not load user profile'));
+}
+
+// ── Search ──
+function liveSearch() {
+  const q = document.getElementById('tbSearch').value.toLowerCase();
+  filterRows();
+}
+
+// ── Filters ──
+function applyFilters() { filterRows(); }
+
+function filterRows() {
+  const q = document.getElementById('tbSearch').value.toLowerCase();
+  const status = document.getElementById('statusFilter').value;
+  const role   = document.getElementById('roleFilter').value;
+  let count = 0;
+  document.querySelectorAll('#usersTableBody tr').forEach(row => {
+    const txt = row.textContent.toLowerCase();
+    const rs = row.dataset.status;
+    const rr = row.dataset.role;
+    const show = (!q || txt.includes(q)) &&
+                 (!status || rs === status) &&
+                 (!role   || rr === role);
+    row.style.display = show ? '' : 'none';
+    if (show) count++;
+  });
+  document.getElementById('resultsCount').textContent = count + ' results found';
+}
+
+// ── Tab switcher ──
+function switchTab(btn, tab) {
+  document.querySelectorAll('.adm-tb-tab').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  if (tab === 'bulk') showToast('☑ Bulk Actions: select rows to perform mass operations.');
+  if (tab === 'audit') showToast('📋 Audit Logs: full access log coming in the next update.');
+}
+
+// ── Modal ──
+function openCreateModal() {
+  document.getElementById('createModal').classList.add('open');
+}
+function closeCreateModal() {
+  document.getElementById('createModal').classList.remove('open');
+}
+document.getElementById('createModal').addEventListener('click', function(e) {
+  if (e.target === this) closeCreateModal();
+});
+
+// ── Toast ──
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(window._toastTimer);
+  window._toastTimer = setTimeout(() => t.classList.remove('show'), 3000);
+}
+</script>
 </body>
 </html>

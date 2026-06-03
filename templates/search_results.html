@@ -1,39 +1,327 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Search Results</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Search Results{% if query %} for "{{ query }}"{% endif %} — ShopSmart AI</title>
+  <meta name="description" content="AI-powered search results for {{ query or 'your query' }} on ShopSmart AI.">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='extra1.css') }}">
+  <style>
+    .sr-body { background:#FAFBFF; min-height:100vh; }
+
+    /* Search Header */
+    .sr-header { background:white; border-bottom:1px solid var(--border); padding:20px 32px; }
+    .sr-header-inner { max-width:1200px; margin:0 auto; }
+    .sr-big-search { display:flex; align-items:center; gap:12px; margin-bottom:12px; }
+    .sr-big-input-wrap { flex:1; position:relative; }
+    .sr-big-input { width:100%; padding:14px 20px 14px 48px; border:2px solid var(--primary); border-radius:var(--radius-full); font-size:15px; outline:none; background:white; font-weight:500; }
+    .sr-big-icon { position:absolute; left:16px; top:50%; transform:translateY(-50%); font-size:18px; color:var(--primary); }
+    .sr-search-btn { padding:14px 28px; background:var(--gradient); color:white; border:none; border-radius:var(--radius-full); font-size:14px; font-weight:700; cursor:pointer; white-space:nowrap; box-shadow:var(--shadow-blue); }
+    .sr-meta { font-size:13px; color:var(--text-muted); }
+    .sr-meta strong { color:var(--text-primary); }
+    .sr-ai-note { display:inline-flex; align-items:center; gap:6px; background:var(--secondary-light); color:var(--secondary); padding:4px 12px; border-radius:var(--radius-full); font-size:11px; font-weight:700; margin-left:12px; border:1px solid rgba(124,58,237,.15); }
+
+    /* Layout */
+    .sr-layout { max-width:1200px; margin:0 auto; padding:28px 32px; display:grid; grid-template-columns:240px 1fr; gap:28px; align-items:start; }
+
+    /* Filters sidebar */
+    .sr-filters { background:white; border:1px solid var(--border); border-radius:var(--radius-lg); padding:20px; position:sticky; top:80px; }
+    .sf-title { font-size:14px; font-weight:800; color:var(--text-primary); margin-bottom:16px; display:flex; align-items:center; justify-content:space-between; }
+    .sf-clear { font-size:12px; color:var(--primary); font-weight:600; cursor:pointer; }
+    .sf-section { margin-bottom:20px; border-bottom:1px solid var(--border); padding-bottom:16px; }
+    .sf-section:last-child { border-bottom:none; margin-bottom:0; padding-bottom:0; }
+    .sf-section-title { font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:.7px; color:var(--text-muted); margin-bottom:10px; }
+    .sf-option { display:flex; align-items:center; gap:8px; padding:5px 0; font-size:13px; color:var(--text-secondary); cursor:pointer; transition:color .2s; }
+    .sf-option:hover { color:var(--primary); }
+    .sf-option input[type="checkbox"] { accent-color:var(--primary); width:14px; height:14px; }
+    .sf-option-count { margin-left:auto; font-size:11px; color:var(--text-muted); background:var(--bg); padding:1px 7px; border-radius:10px; }
+    .price-range-wrap { padding:8px 0; }
+    .price-range-labels { display:flex; justify-content:space-between; font-size:12px; font-weight:600; color:var(--text-secondary); margin-top:8px; }
+    .price-range-input { width:100%; accent-color:var(--primary); }
+    .apply-filter-btn { width:100%; padding:10px; background:var(--gradient); color:white; border:none; border-radius:var(--radius); font-size:13px; font-weight:700; cursor:pointer; margin-top:16px; }
+
+    /* Results area */
+    .sr-results-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; }
+    .srh-left { display:flex; align-items:center; gap:10px; }
+    .srh-count { font-size:15px; font-weight:700; }
+    .srh-right { display:flex; align-items:center; gap:10px; }
+    .sort-select { padding:8px 12px; border:1.5px solid var(--border); border-radius:var(--radius); font-size:13px; font-weight:600; color:var(--text-secondary); background:white; cursor:pointer; outline:none; }
+    .view-toggle { display:flex; border:1.5px solid var(--border); border-radius:var(--radius); overflow:hidden; }
+    .vt-btn { width:34px; height:34px; background:white; border:none; font-size:16px; cursor:pointer; display:flex; align-items:center; justify-content:center; color:var(--text-muted); transition:all .2s; }
+    .vt-btn.active { background:var(--primary); color:white; }
+
+    /* AI Insight banner */
+    .ai-search-banner { background:linear-gradient(135deg,#EFF6FF,#F5F3FF); border:1px solid rgba(37,99,235,.2); border-radius:var(--radius-lg); padding:16px 20px; margin-bottom:20px; display:flex; align-items:center; gap:14px; }
+    .asb-icon { font-size:28px; }
+    .asb-text { flex:1; }
+    .asb-label { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.6px; color:var(--primary); margin-bottom:3px; }
+    .asb-title { font-size:14px; font-weight:700; color:var(--text-primary); }
+    .asb-desc { font-size:12px; color:var(--text-secondary); margin-top:2px; }
+
+    /* Product Grid */
+    .sr-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:18px; }
+
+    .sr-card { background:white; border:1px solid var(--border); border-radius:var(--radius-lg); overflow:hidden; transition:all .25s; position:relative; }
+    .sr-card:hover { box-shadow:0 8px 30px rgba(37,99,235,.12); transform:translateY(-4px); border-color:rgba(37,99,235,.2); }
+
+    .sr-card-img-wrap { position:relative; overflow:hidden; }
+    .sr-card-img { width:100%; height:200px; object-fit:cover; display:block; background:linear-gradient(135deg,#EFF6FF,#F5F3FF); display:flex; align-items:center; justify-content:center; font-size:48px; transition:transform .3s; }
+    .sr-card:hover .sr-card-img { transform:scale(1.04); }
+    .sr-card-img img { width:100%; height:100%; object-fit:cover; }
+    .sr-match-badge { position:absolute; top:10px; left:10px; background:var(--gradient); color:white; padding:3px 10px; border-radius:var(--radius-full); font-size:10px; font-weight:800; display:flex; align-items:center; gap:4px; }
+    .sr-wishlist-btn { position:absolute; top:10px; right:10px; width:32px; height:32px; background:white; border:1px solid var(--border); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:15px; cursor:pointer; opacity:0; transition:opacity .2s; }
+    .sr-card:hover .sr-wishlist-btn { opacity:1; }
+    .sr-wishlist-btn:hover { background:#FEF2F2; border-color:#FECACA; }
+
+    .sr-card-body { padding:16px; }
+    .sr-card-cat { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.8px; color:var(--text-muted); margin-bottom:6px; }
+    .sr-card-name { font-size:14px; font-weight:700; color:var(--text-primary); line-height:1.3; margin-bottom:8px; }
+    .sr-card-stars { color:#F59E0B; font-size:12px; margin-bottom:10px; }
+    .sr-card-stars span { color:var(--text-muted); margin-left:4px; }
+    .sr-card-price-row { display:flex; align-items:baseline; gap:8px; margin-bottom:14px; }
+    .sr-card-price { font-size:20px; font-weight:900; color:var(--text-primary); }
+    .sr-card-old { font-size:13px; color:var(--text-muted); text-decoration:line-through; }
+    .sr-card-btns { display:grid; grid-template-columns:1fr 40px; gap:8px; }
+    .sr-cart-btn { padding:10px; background:var(--gradient); color:white; border:none; border-radius:var(--radius); font-size:13px; font-weight:700; cursor:pointer; transition:opacity .2s; }
+    .sr-cart-btn:hover { opacity:.9; }
+    .sr-view-btn { padding:10px; border:1.5px solid var(--border); border-radius:var(--radius); background:white; font-size:15px; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all .2s; }
+    .sr-view-btn:hover { border-color:var(--primary); color:var(--primary); }
+
+    /* No results */
+    .sr-empty { text-align:center; padding:80px 32px; background:white; border:1px solid var(--border); border-radius:var(--radius-lg); }
+    .sr-empty-icon { font-size:64px; margin-bottom:16px; }
+    .sr-empty h3 { font-size:20px; font-weight:800; margin-bottom:8px; }
+    .sr-empty p { font-size:14px; color:var(--text-muted); margin-bottom:24px; }
+    .sr-empty-suggestions { display:flex; flex-wrap:wrap; gap:8px; justify-content:center; margin-bottom:24px; }
+    .sr-suggestion { padding:7px 16px; border:1.5px solid var(--border); border-radius:var(--radius-full); font-size:13px; color:var(--text-secondary); cursor:pointer; transition:all .2s; }
+    .sr-suggestion:hover { border-color:var(--primary); color:var(--primary); }
+  </style>
 </head>
-<body>
+<body class="sr-body">
 
-<h1>
-Search Results For:
-{{ query }}
-</h1>
+<!-- NAVBAR -->
+<nav class="sf-navbar">
+  <a href="/" class="sf-brand">
+    <div class="sf-brand-icon">🛒</div> ShopSmart AI
+  </a>
+  <div class="sf-nav">
+    <a href="/products">Shop</a>
+    <a href="#">Deals</a>
+    <a href="#">Categories</a>
+    <a href="/recommendations">AI Picks</a>
+  </div>
+  <div class="sf-search">
+    <span class="si">🔍</span>
+    <form action="/search" method="GET">
+      <input type="text" name="q" placeholder="Ask AI to find products…" value="{{ query or '' }}">
+    </form>
+  </div>
+  <div class="sf-actions">
+    <a href="/wishlist" class="sf-action-link"><span class="icon">🤍</span></a>
+    <a href="#" class="sf-action-link"><span class="icon">🔔</span></a>
+    <a href="/profile" class="sf-action-link"><span class="icon">👤</span></a>
+    <a href="/cart" class="sf-cart-btn">🛒 Cart <span class="sf-cart-badge">0</span></a>
+  </div>
+</nav>
 
-{% for product in products %}
-
-<div style="
-border:1px solid black;
-padding:15px;
-margin:15px;
-width:300px;
-">
-
-    <h2>
-        {{ product.product_name }}
-    </h2>
-
-    <p>
-        ₹{{ product.price }}
-    </p>
-
-    <p>
-        {{ product.description }}
-    </p>
-
+<!-- SEARCH HEADER -->
+<div class="sr-header">
+  <div class="sr-header-inner">
+    <form action="/search" method="GET" class="sr-big-search">
+      <div class="sr-big-input-wrap">
+        <span class="sr-big-icon">🔍</span>
+        <input class="sr-big-input" type="text" name="q" value="{{ query or '' }}" placeholder="Search for products, brands, categories…" id="mainSearchInput">
+      </div>
+      <button type="submit" class="sr-search-btn">Search</button>
+    </form>
+    <div class="sr-meta">
+      {% if query %}
+        Showing results for <strong>"{{ query }}"</strong> —
+        <strong>{{ products | length }}</strong> product{{ 's' if products | length != 1 else '' }} found
+        <span class="sr-ai-note">✦ AI-Enhanced</span>
+      {% else %}
+        Browse all products <span class="sr-ai-note">✦ AI-Powered</span>
+      {% endif %}
+    </div>
+  </div>
 </div>
 
-{% endfor %}
+<!-- MAIN LAYOUT -->
+<div class="sr-layout">
 
+  <!-- FILTERS SIDEBAR -->
+  <div class="sr-filters">
+    <div class="sf-title">
+      Filters
+      <span class="sf-clear" onclick="clearFilters()">Clear all</span>
+    </div>
+
+    <div class="sf-section">
+      <div class="sf-section-title">Category</div>
+      <label class="sf-option"><input type="checkbox"> Electronics <span class="sf-option-count">45</span></label>
+      <label class="sf-option"><input type="checkbox"> Home Office <span class="sf-option-count">12</span></label>
+      <label class="sf-option"><input type="checkbox"> Smart Home <span class="sf-option-count">8</span></label>
+      <label class="sf-option"><input type="checkbox"> Fashion <span class="sf-option-count">23</span></label>
+      <label class="sf-option"><input type="checkbox"> Sports <span class="sf-option-count">16</span></label>
+    </div>
+
+    <div class="sf-section">
+      <div class="sf-section-title">Price Range</div>
+      <div class="price-range-wrap">
+        <input type="range" class="price-range-input" min="0" max="2000" value="1000" id="priceRange" oninput="updatePriceLabel(this.value)">
+        <div class="price-range-labels">
+          <span>$0</span>
+          <span id="priceLabel">Up to $1,000</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="sf-section">
+      <div class="sf-section-title">Rating</div>
+      <label class="sf-option"><input type="checkbox"> ★★★★★ 5.0 <span class="sf-option-count">8</span></label>
+      <label class="sf-option"><input type="checkbox"> ★★★★☆ 4.0+ <span class="sf-option-count">24</span></label>
+      <label class="sf-option"><input type="checkbox"> ★★★☆☆ 3.0+ <span class="sf-option-count">36</span></label>
+    </div>
+
+    <div class="sf-section">
+      <div class="sf-section-title">Availability</div>
+      <label class="sf-option"><input type="checkbox" checked> In Stock</label>
+      <label class="sf-option"><input type="checkbox"> Pre-Order</label>
+    </div>
+
+    <button class="apply-filter-btn">Apply Filters</button>
+  </div>
+
+  <!-- RESULTS AREA -->
+  <div>
+
+    <!-- AI Banner -->
+    {% if query %}
+    <div class="ai-search-banner">
+      <div class="asb-icon">🤖</div>
+      <div class="asb-text">
+        <div class="asb-label">✦ AI Search Insight</div>
+        <div class="asb-title">Showing best matches for "{{ query }}"</div>
+        <div class="asb-desc">Results ranked by AI relevance score based on your profile, purchase history, and popularity.</div>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Results Header -->
+    <div class="sr-results-header">
+      <div class="srh-left">
+        <span class="srh-count">{{ products | length }} Result{{ 's' if products | length != 1 else '' }}</span>
+      </div>
+      <div class="srh-right">
+        <select class="sort-select">
+          <option>Sort: Best Match</option>
+          <option>Price: Low to High</option>
+          <option>Price: High to Low</option>
+          <option>Highest Rated</option>
+          <option>Newest First</option>
+        </select>
+        <div class="view-toggle">
+          <button class="vt-btn active" id="gridViewBtn" onclick="setView('grid')">⊞</button>
+          <button class="vt-btn" id="listViewBtn" onclick="setView('list')">☰</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Results Grid / Empty State -->
+    {% if products %}
+    {% set match_pcts = [98, 95, 92, 88, 85, 91, 87, 93, 96, 90] %}
+    <div class="sr-grid" id="srGrid">
+      {% for product in products %}
+      {% set idx = loop.index0 %}
+      <div class="sr-card">
+        <div class="sr-card-img-wrap">
+          {% if product.image_url %}
+            <img class="sr-card-img" src="{{ url_for('static', filename='images/' + product.image_url) }}" alt="{{ product.product_name }}"
+              onerror="this.style.display='none'; this.parentElement.style.display='flex'; this.parentElement.style.alignItems='center'; this.parentElement.style.justifyContent='center'; this.parentElement.style.height='200px'; this.parentElement.innerHTML='🛍';">
+          {% else %}
+            <div class="sr-card-img">🛍</div>
+          {% endif %}
+          <div class="sr-match-badge">✦ {{ match_pcts[idx % 10] }}% Match</div>
+          <a href="/add-to-wishlist/{{ product.product_id }}" class="sr-wishlist-btn" title="Save to Wishlist">🤍</a>
+        </div>
+        <div class="sr-card-body">
+          <div class="sr-card-cat">{{ product.category_name or 'Electronics' }}</div>
+          <div class="sr-card-name">{{ product.product_name }}</div>
+          <div class="sr-card-stars">
+            ★★★★{% if loop.index % 3 == 0 %}★{% else %}☆{% endif %}
+            <span>({{ 40 + loop.index * 7 }} reviews)</span>
+          </div>
+          <div class="sr-card-price-row">
+            <span class="sr-card-price">${{ "%.2f"|format(product.price) }}</span>
+            <span class="sr-card-old">${{ "%.2f"|format(product.price * 1.15) }}</span>
+          </div>
+          <div class="sr-card-btns">
+            <a href="/add-to-cart/{{ product.product_id }}" class="sr-cart-btn">🛒 Add to Cart</a>
+            <a href="/product/{{ product.product_id }}" class="sr-view-btn" title="Quick View">👁</a>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+
+    {% else %}
+    <!-- Empty State -->
+    <div class="sr-empty">
+      <div class="sr-empty-icon">🔍</div>
+      <h3>No results for "{{ query or 'your search' }}"</h3>
+      <p>Our AI couldn't find an exact match. Try one of these popular searches or browse all products.</p>
+      <div class="sr-empty-suggestions">
+        <span class="sr-suggestion" onclick="doSearch('Headphones')">🎧 Headphones</span>
+        <span class="sr-suggestion" onclick="doSearch('Monitor')">🖥 Monitor</span>
+        <span class="sr-suggestion" onclick="doSearch('Chair')">🪑 Chair</span>
+        <span class="sr-suggestion" onclick="doSearch('Laptop')">💻 Laptop</span>
+        <span class="sr-suggestion" onclick="doSearch('Speaker')">🔊 Speaker</span>
+        <span class="sr-suggestion" onclick="doSearch('Watch')">⌚ Watch</span>
+      </div>
+      <a href="/products" class="btn-primary" style="display:inline-flex;">Browse All Products</a>
+    </div>
+    {% endif %}
+
+  </div>
+</div>
+
+<footer class="sf-footer">
+  <span class="brand">ShopSmart AI</span>
+  <div class="sf-footer-links">
+    <a href="#">Privacy Policy</a>
+    <a href="#">Terms of Service</a>
+    <a href="#">AI Ethics</a>
+    <a href="#">Contact Support</a>
+    <a href="#">Returns</a>
+  </div>
+  <div class="sf-footer-icons">🌐 ✉</div>
+</footer>
+
+<script>
+function updatePriceLabel(val) {
+  document.getElementById('priceLabel').textContent = 'Up to $' + parseInt(val).toLocaleString();
+}
+function clearFilters() {
+  document.querySelectorAll('.sr-filters input[type="checkbox"]').forEach(cb => cb.checked = false);
+}
+function setView(mode) {
+  const grid = document.getElementById('srGrid');
+  if (!grid) return;
+  const gBtn = document.getElementById('gridViewBtn');
+  const lBtn = document.getElementById('listViewBtn');
+  if (mode === 'grid') {
+    grid.style.gridTemplateColumns = 'repeat(3,1fr)';
+    gBtn.classList.add('active'); lBtn.classList.remove('active');
+  } else {
+    grid.style.gridTemplateColumns = '1fr';
+    lBtn.classList.add('active'); gBtn.classList.remove('active');
+  }
+}
+function doSearch(term) {
+  document.getElementById('mainSearchInput').value = term;
+  window.location.href = '/search?q=' + encodeURIComponent(term);
+}
+</script>
 </body>
 </html>

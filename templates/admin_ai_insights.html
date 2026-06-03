@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Insights — Nexus Admin</title>
+  <meta name="description" content="ShopSmart AI recommendation engine analytics and insights.">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='extra3.css') }}">
+  <style>
+    .ai-page-grid { display:grid; grid-template-columns:1fr 1fr; gap:18px; margin-bottom:18px; }
+    .ai-kpi-row { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:22px; }
+    .ai-kpi { background:white; border:1px solid var(--border); border-radius:var(--radius-lg); padding:18px 20px; }
+    .ai-kpi-label { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:var(--text-muted); margin-bottom:6px; }
+    .ai-kpi-val { font-size:26px; font-weight:900; color:var(--text-primary); }
+    .ai-kpi-sub { font-size:11px; color:#10B981; font-weight:600; margin-top:4px; }
+    .ai-kpi.purple { border-color:var(--secondary); background:var(--secondary-light); }
+    .ai-kpi.purple .ai-kpi-val { color:var(--secondary); }
+
+    .rec-card { background:white; border:1px solid var(--border); border-radius:var(--radius-lg); overflow:hidden; }
+    .rec-card-header { padding:16px 20px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; }
+    .rec-card-header h3 { font-size:14px; font-weight:800; }
+    .rec-list { padding:8px 0; }
+    .rec-item { display:flex; align-items:center; gap:12px; padding:10px 18px; transition:background .15s; }
+    .rec-item:hover { background:#FAFBFF; }
+    .rec-rank { width:24px; height:24px; border-radius:50%; background:var(--gradient); color:white; font-size:10px; font-weight:800; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+    .rec-rank.gold { background:linear-gradient(135deg,#F59E0B,#D97706); }
+    .rec-rank.silver { background:linear-gradient(135deg,#94A3B8,#64748B); }
+    .rec-rank.bronze { background:linear-gradient(135deg,#B45309,#92400E); }
+    .rec-thumb { width:36px; height:36px; border-radius:var(--radius); border:1px solid var(--border); background:var(--bg); object-fit:cover; overflow:hidden; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:16px; }
+    .rec-thumb img { width:100%; height:100%; object-fit:cover; }
+    .rec-name { font-size:13px; font-weight:700; color:var(--text-primary); flex:1; }
+    .rec-price { font-size:12px; color:var(--text-muted); }
+    .rec-count-badge { padding:3px 10px; background:var(--primary-light); color:var(--primary); border-radius:var(--radius-full); font-size:11px; font-weight:700; }
+    .rec-bar-row { display:flex; align-items:center; gap:8px; margin-top:4px; }
+    .rec-bar-track { flex:1; height:4px; background:var(--border); border-radius:10px; overflow:hidden; }
+    .rec-bar-fill { height:100%; border-radius:10px; background:var(--gradient); }
+
+    .search-card { background:white; border:1px solid var(--border); border-radius:var(--radius-lg); overflow:hidden; }
+    .search-tags-grid { padding:16px 18px; display:flex; flex-wrap:wrap; gap:8px; }
+    .search-tag-item { display:flex; align-items:center; gap:8px; padding:7px 14px; border:1px solid var(--border); border-radius:var(--radius-full); font-size:12px; color:var(--text-secondary); background:var(--bg); }
+    .search-tag-count { font-size:11px; font-weight:800; color:var(--primary); background:var(--primary-light); padding:1px 6px; border-radius:10px; }
+
+    .viewed-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; }
+    .viewed-card { background:white; border:1px solid var(--border); border-radius:var(--radius-lg); overflow:hidden; transition:all .2s; }
+    .viewed-card:hover { box-shadow:0 6px 20px rgba(37,99,235,.1); transform:translateY(-2px); }
+    .viewed-img { height:100px; background:var(--bg); display:flex; align-items:center; justify-content:center; font-size:32px; overflow:hidden; }
+    .viewed-img img { width:100%; height:100%; object-fit:cover; }
+    .viewed-body { padding:10px 12px; }
+    .viewed-name { font-size:12px; font-weight:700; color:var(--text-primary); margin-bottom:4px; line-height:1.3; }
+    .viewed-price { font-size:11px; color:var(--text-muted); }
+    .viewed-views { font-size:10px; font-weight:700; color:var(--primary); margin-top:5px; }
+  </style>
+</head>
+<body>
+<div class="nexus-layout">
+  <aside class="nexus-sidebar">
+    <div class="nexus-brand">
+      <div class="nb-icon">⊞</div>
+      <div class="nb-name">Nexus</div>
+      <div class="nb-version">v4.2.0</div>
+    </div>
+    <div class="nexus-menu-label">MAIN MENU</div>
+    <nav class="nexus-nav">
+      <a href="/admin" class="nexus-nav-item"><span class="nni">⊞</span> Executive Overview</a>
+      <a href="/admin/orders" class="nexus-nav-item"><span class="nni">🧾</span> Orders</a>
+      <a href="/admin/inventory" class="nexus-nav-item"><span class="nni">📦</span> Inventory Health</a>
+      <a href="/admin/users" class="nexus-nav-item"><span class="nni">👥</span> Users</a>
+      <a href="/admin/payments" class="nexus-nav-item"><span class="nni">💰</span> Revenue Analytics</a>
+      <a href="/admin/ai-insights" class="nexus-nav-item active"><span class="nni">✦</span> AI Insights</a>
+    </nav>
+    <div class="nexus-user">
+      <div class="nexus-user-av">SA</div>
+      <div class="nexus-user-info">
+        <div class="un">Admin</div>
+        <div class="uv">v4.2.0</div>
+      </div>
+    </div>
+  </aside>
+
+  <div class="nexus-main">
+    <header class="nexus-topbar">
+      <h1>✦ AI Insights</h1>
+      <div class="nexus-search"><span class="nsi">🔍</span><input type="text" placeholder="Search AI data…"></div>
+      <div class="nexus-topbar-actions">
+        <div class="nexus-icon-btn">🔔</div>
+        <button class="nexus-export-btn">⬇ Export</button>
+        <div class="nexus-avatar">SA</div>
+      </div>
+    </header>
+
+    <div class="nexus-content">
+
+      <!-- KPI Row -->
+      <div class="ai-kpi-row">
+        <div class="ai-kpi purple">
+          <div class="ai-kpi-label">✦ Total Recommendations</div>
+          <div class="ai-kpi-val">{{ total_recs }}</div>
+          <div class="ai-kpi-sub">↑ AI Engine Active</div>
+        </div>
+        <div class="ai-kpi">
+          <div class="ai-kpi-label">Top Products Recommended</div>
+          <div class="ai-kpi-val">{{ top_recommended | length }}</div>
+          <div class="ai-kpi-sub">↑ +18% Conversion Lift</div>
+        </div>
+        <div class="ai-kpi">
+          <div class="ai-kpi-label">Unique Search Terms</div>
+          <div class="ai-kpi-val">{{ top_searches | length }}</div>
+          <div class="ai-kpi-sub">↑ Search Intelligence</div>
+        </div>
+        <div class="ai-kpi">
+          <div class="ai-kpi-label">Most Viewed Products</div>
+          <div class="ai-kpi-val">{{ most_viewed | length }}</div>
+          <div class="ai-kpi-sub">Browsing Patterns</div>
+        </div>
+      </div>
+
+      <!-- Top Recommended + Search Terms -->
+      <div class="ai-page-grid">
+
+        <!-- Top Recommended Products -->
+        <div class="rec-card">
+          <div class="rec-card-header">
+            <h3>✦ Top Recommended Products</h3>
+            <span style="font-size:11px;color:var(--text-muted);">AI Engine Rankings</span>
+          </div>
+          <div class="rec-list">
+            {% for product in top_recommended %}
+            {% set max_recs = top_recommended[0].rec_count if top_recommended else 1 %}
+            <div class="rec-item">
+              <div class="rec-rank {{ 'gold' if loop.index == 1 else ('silver' if loop.index == 2 else ('bronze' if loop.index == 3 else '')) }}">{{ loop.index }}</div>
+              <div class="rec-thumb">
+                {% if product.image_url %}<img src="{{ url_for('static', filename='images/' + product.image_url) }}" alt="" onerror="this.style.display='none';this.parentElement.innerHTML='📦';">{% else %}📦{% endif %}
+              </div>
+              <div style="flex:1;">
+                <div class="rec-name">{{ product.product_name }}</div>
+                <div class="rec-bar-row">
+                  <div class="rec-bar-track"><div class="rec-bar-fill" style="width:{{ (product.rec_count / max_recs * 100) | int }}%"></div></div>
+                  <span class="rec-count-badge">{{ product.rec_count }} recs</span>
+                </div>
+              </div>
+            </div>
+            {% else %}
+            <div style="text-align:center;padding:40px;color:var(--text-muted);">
+              <div style="font-size:36px;margin-bottom:10px;">✦</div>
+              <div style="font-weight:700;">No recommendation data yet</div>
+              <div style="font-size:12px;margin-top:4px;">The AI engine will populate this as users browse.</div>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+
+        <!-- Top Search Terms -->
+        <div class="search-card">
+          <div class="rec-card-header">
+            <h3>🔍 Top Search Terms</h3>
+            <span style="font-size:11px;color:var(--text-muted);">User Intent Signals</span>
+          </div>
+          <div class="search-tags-grid">
+            {% for term in top_searches %}
+            <div class="search-tag-item">
+              🔍 {{ term.search_query }}
+              <span class="search-tag-count">{{ term.cnt }}x</span>
+            </div>
+            {% else %}
+            <div style="padding:24px;color:var(--text-muted);font-size:13px;">No search data yet.</div>
+            {% endfor %}
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Most Viewed -->
+      <div class="rec-card" style="margin-top:0;">
+        <div class="rec-card-header">
+          <h3>👁 Most Viewed Products</h3>
+          <span style="font-size:11px;color:var(--text-muted);">Browsing Behavior Analytics</span>
+        </div>
+        <div style="padding:16px 18px;">
+          {% if most_viewed %}
+          <div class="viewed-grid">
+            {% for product in most_viewed %}
+            <a href="/product/{{ product.product_id }}" class="viewed-card" style="text-decoration:none;">
+              <div class="viewed-img">
+                {% if product.image_url %}<img src="{{ url_for('static', filename='images/' + product.image_url) }}" alt="" onerror="this.style.display='none';this.parentElement.innerHTML='📦';">{% else %}📦{% endif %}
+              </div>
+              <div class="viewed-body">
+                <div class="viewed-name">{{ product.product_name }}</div>
+                <div class="viewed-price">${{ "%.2f"|format(product.price) }}</div>
+                <div class="viewed-views">👁 {{ product.view_count }} views</div>
+              </div>
+            </a>
+            {% endfor %}
+          </div>
+          {% else %}
+          <div style="text-align:center;padding:40px;color:var(--text-muted);">
+            <div style="font-size:36px;margin-bottom:10px;">👁</div>
+            <div style="font-weight:700;">No view data yet</div>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+
+    </div>
+    <footer class="nexus-footer">
+      <span class="nf-brand">Nexus Platform</span>
+      <span class="nf-copy">© 2024 Nexus Intelligence Platform • Enterprise Edition</span>
+      <div class="nexus-footer-links"><a href="#">Documentation</a><a href="#">API Status</a><a href="#">Support</a></div>
+    </footer>
+  </div>
+</div>
+</body>
+</html>

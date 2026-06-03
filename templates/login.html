@@ -1,33 +1,145 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Login</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sign In — ShopSmart AI</title>
+  <meta name="description" content="Sign in to ShopSmart AI and continue your personalized shopping journey powered by AI.">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
 
-<h1>Login</h1>
+<div class="auth-layout">
 
-<form method="POST">
+  <!-- ===== LEFT PANEL ===== -->
+  <div class="auth-left">
+    <div class="auth-hero-image">
+      <img src="{{ url_for('static', filename='images/register_hero.png') }}" alt="Smart Shopping">
+    </div>
 
-    <input type="email"
-           name="email"
-           placeholder="Email"
-           required>
+    <div class="auth-left-content">
+      <h2>Welcome Back to <span class="accent">Smarter Shopping</span></h2>
+      <p>Our AI analyzes thousands of data points in real-time to curate a personalized shopping journey just for you. Precision, meet convenience.</p>
+      <div class="auth-tags">
+        <span class="auth-tag">✦ AI RECOMMENDATIONS</span>
+        <span class="auth-tag">🔍 SMART SEARCH</span>
+        <span class="auth-tag">📈 BEHAVIOR ANALYTICS</span>
+        <span class="auth-tag">💝 WISHLIST TRACKING</span>
+      </div>
+    </div>
 
-    <br><br>
+    <div class="auth-footer">
+      © 2024 ShopSmart AI. All rights reserved.
+    </div>
+  </div>
 
-    <input type="password"
-           name="password"
-           placeholder="Password"
-           required>
+  <!-- ===== RIGHT PANEL ===== -->
+  <div class="auth-right">
+    <div class="auth-card fade-in-up">
+      <div class="auth-card-icon">🔒</div>
+      <h2>Sign In</h2>
+      <p class="subtitle">Continue your personalized shopping journey.</p>
 
-    <br><br>
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <div class="flash-messages">
+            {% for cat, msg in messages %}
+              <div class="flash-msg {{ cat }}">{{ msg }}</div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% endwith %}
 
-    <button type="submit">
-        Login
-    </button>
+      <form method="POST" action="/login">
+        <div class="form-group">
+          <label class="form-label">Email Address</label>
+          <div class="input-wrap">
+            <span class="input-icon">✉</span>
+            <input
+              id="email"
+              type="email"
+              name="email"
+              class="form-input"
+              placeholder="name@company.com"
+              required
+              autocomplete="email"
+            >
+          </div>
+        </div>
 
-</form>
+        <div class="form-group">
+          <div class="form-label-row">
+            <label class="form-label" style="margin-bottom:0;">Password</label>
+            <a href="#" class="forgot-link">Forgot Password?</a>
+          </div>
+          <div class="input-wrap">
+            <span class="input-icon">🔒</span>
+            <input
+              id="password"
+              type="password"
+              name="password"
+              class="form-input"
+              placeholder="••••••••"
+              required
+              autocomplete="current-password"
+            >
+            <button type="button" class="input-toggle" id="togglePwd" onclick="togglePassword('password','togglePwd')">👁</button>
+          </div>
+        </div>
+
+        <div class="form-check">
+          <input type="checkbox" id="remember" name="remember">
+          <label for="remember">Keep me signed in for 30 days</label>
+        </div>
+
+        <button type="submit" class="btn-auth">
+          Sign In to Account &nbsp;→
+        </button>
+      </form>
+
+      <div class="divider">OR CONTINUE WITH</div>
+
+      <div class="social-btns">
+        <button class="btn-social" type="button">
+          <span>🌐</span> Google
+        </button>
+        <button class="btn-social" type="button">
+          <span>🐱</span> GitHub
+        </button>
+      </div>
+
+      <p class="auth-switch">
+        New to ShopSmart AI? <a href="/register">Create an Account</a>
+      </p>
+
+      <div style="border-top: 1px solid var(--border); margin-top: 24px; padding-top: 16px;">
+        <div style="display:flex; justify-content:center; gap:24px; font-size:12px; color:var(--text-muted);">
+          <a href="#" style="color:var(--text-muted);">Privacy Policy</a>
+          <a href="#" style="color:var(--text-muted);">Terms of Service</a>
+          <a href="#" style="color:var(--text-muted);">Help Center</a>
+        </div>
+        <p style="text-align:center; font-size:12px; color:var(--text-muted); margin-top:12px;">
+          © 2024 ShopSmart AI. All rights reserved.
+        </p>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+function togglePassword(inputId, btnId) {
+  const input = document.getElementById(inputId);
+  const btn = document.getElementById(btnId);
+  if (input.type === 'password') {
+    input.type = 'text';
+    btn.textContent = '🙈';
+  } else {
+    input.type = 'password';
+    btn.textContent = '👁';
+  }
+}
+</script>
 
 </body>
 </html>

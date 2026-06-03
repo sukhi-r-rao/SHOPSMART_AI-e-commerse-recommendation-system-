@@ -39,12 +39,18 @@ def search_products():
 
         cursor.execute(
             """
-            SELECT *
-            FROM products
-            WHERE product_name LIKE %s
-            """
-            ,
-            ('%' + query + '%',)
+            SELECT p.product_id, p.product_name, p.price, p.stock,
+                   p.image_url, p.description, p.status,
+                   c.category_name, b.brand_name
+            FROM products p
+            LEFT JOIN categories c ON p.category_id = c.category_id
+            LEFT JOIN brands     b ON p.brand_id     = b.brand_id
+            WHERE p.product_name LIKE %s
+               OR p.description  LIKE %s
+               OR c.category_name LIKE %s
+            ORDER BY p.product_name
+            """,
+            ('%' + query + '%', '%' + query + '%', '%' + query + '%')
         )
 
         products = cursor.fetchall()

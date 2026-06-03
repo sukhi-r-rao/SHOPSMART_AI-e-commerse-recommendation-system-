@@ -1,32 +1,237 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Wishlist</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Wishlist — ShopSmart AI</title>
+  <meta name="description" content="Your AI-powered wishlist on ShopSmart AI. Track saved items, price drops and smart shopping insights.">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='extra2.css') }}">
 </head>
-<body>
+<body class="wl-body">
 
-<h1>My Wishlist</h1>
+<!-- NAVBAR -->
+<nav class="sf-navbar">
+  <a href="/" class="sf-brand">
+    <div class="sf-brand-icon">🛒</div> ShopSmart AI
+  </a>
+  <div class="sf-nav">
+    <a href="/products">Shop</a>
+    <a href="#">Deals</a>
+    <a href="#">Categories</a>
+    <a href="/recommendations">AI Picks</a>
+  </div>
+  <div class="sf-search">
+    <span class="si">🔍</span>
+    <form action="/search" method="GET">
+      <input type="text" name="q" placeholder="Search saved items…">
+    </form>
+  </div>
+  <div class="sf-actions">
+    <a href="/wishlist" class="sf-action-link" style="color:var(--primary); font-weight:700;"><span class="icon">🤍</span>Wishlist</a>
+    <a href="#" class="sf-action-link"><span class="icon">🔔</span></a>
+    <a href="/profile" class="sf-action-link"><span class="icon">👤</span></a>
+    <a href="/cart" class="sf-cart-btn">🛒 Cart <span class="sf-cart-badge">{{ cart_count or 0 }}</span></a>
+  </div>
+</nav>
 
-{% for item in wishlist_items %}
+<div class="wl-content">
 
-<div style="
-border:1px solid black;
-padding:15px;
-margin:15px;
-width:300px;
-">
+  <!-- Header -->
+  <div class="wl-header">
+    <h1>My Wishlist</h1>
+    <p>Products you love, saved for later. Powered by AI-driven insights.</p>
+  </div>
 
-<h2>{{ item.product_name }}</h2>
+  <!-- Stats -->
+  <div class="wl-stats">
+    <div class="wl-stat-card">
+      <div class="wl-stat-label">🗂 TOTAL ITEMS</div>
+      <div class="wl-stat-value">{{ wishlist_items | length }}</div>
+    </div>
+    <div class="wl-stat-card ai-opps">
+      <div class="wl-stat-label">✦ AI OPPORTUNITIES</div>
+      <div class="wl-stat-value">{{ ai_opportunities }} Active</div>
+    </div>
+    <div class="wl-stat-card savings">
+      <div class="wl-stat-label">💰 ESTIMATED SAVINGS</div>
+      <div class="wl-stat-value">${{ "%.2f"|format(estimated_savings) }}</div>
+    </div>
+  </div>
 
-<p>₹{{ item.price }}</p>
+  <!-- Smart Shopping Insights -->
+  <div class="insights-panel">
+    <div class="panel-title">✦ Smart Shopping Insights</div>
+    <div class="insights-cols">
+      <div class="insight-col">
+        <div class="col-label">PREDICTION</div>
+        <div class="col-title">Weekend Flash Sale Likely</div>
+        <div class="col-desc">AI predicts a 15% price drop for items in your "Tech" category within 48 hours.</div>
+      </div>
+      <div class="insight-col opp">
+        <div class="col-label">OPPORTUNITY</div>
+        <div class="col-title">Bundle &amp; Save</div>
+        <div class="col-desc">Combine your 3 kitchen gadgets for an automatic 10% loyalty discount at checkout.</div>
+      </div>
+      <div class="insight-col avail">
+        <div class="col-label">AVAILABILITY</div>
+        <div class="col-title">Low Stock Alert</div>
+        <div class="col-desc">The "Ultra-Light Laptop" is down to last 3 units in regional warehouses.</div>
+      </div>
+    </div>
+  </div>
 
-<a href="/wishlist/remove/{{ item.wishlist_id }}">
-Remove
-</a>
+  <!-- All Saved Items -->
+  <div class="section-header-row">
+    <h2>All Saved Items</h2>
+    <div class="header-actions">
+      <button class="filter-sort-btn">⚙ Filter</button>
+      <button class="filter-sort-btn">↕ Sort</button>
+    </div>
+  </div>
+
+  <div class="wl-grid">
+    {% set match_pcts = [98, 93, 92, 89] %}
+    {% set stock_flags = [true, false, false, false] %}
+    {% set cats = ['FOOTWEAR', 'WEARABLES', 'AUDIO', 'COMPUTERS'] %}
+    {% set ratings = ['4.8', '5.0', '4.2', '4.7'] %}
+
+    {% for item in wishlist_items %}
+    {% set idx = loop.index0 %}
+    <div class="wl-card">
+      <div class="wl-card-img-wrap">
+        {% if item.image_url %}
+          <img class="wl-card-img" src="{{ url_for('static', filename='images/' + item.image_url) }}" alt="{{ item.product_name }}"
+            onerror="this.src=''; this.className='wl-card-img'; this.style.display='flex'; this.style.alignItems='center'; this.style.justifyContent='center'; this.innerHTML='🛍';">
+        {% else %}
+          <div class="wl-card-img">🛍</div>
+        {% endif %}
+        <div class="wl-match-badge">✦ {{ match_pcts[idx % 4] }}% Match</div>
+        {% if stock_flags[idx % 4] %}<div class="wl-stock-badge">Low Stock</div>{% endif %}
+        <a href="/remove-from-wishlist/{{ item.wishlist_id }}" class="wl-remove-btn" title="Remove">🗑</a>
+      </div>
+      <div class="wl-card-body">
+        <div class="wl-card-cat">{{ cats[idx % 4] }}</div>
+        <div class="wl-card-name">{{ item.product_name }}</div>
+        <div class="wl-card-stars">★★★★{% if ratings[idx % 4] != '5.0' %}☆{% else %}★{% endif %} ({{ ratings[idx % 4] }})</div>
+        <div class="wl-card-price-row">
+          <span class="wl-card-price">${{ "%.2f"|format(item.price) }}</span>
+          <span class="wl-card-old">${{ "%.2f"|format(item.price * 1.1) }}</span>
+        </div>
+        <div class="wl-card-btns">
+          <a href="/add-to-cart/{{ item.product_id }}" class="wl-move-btn">Move to Cart</a>
+          <a href="/product/{{ item.product_id }}" class="wl-buy-btn">Buy Now</a>
+        </div>
+      </div>
+    </div>
+    {% else %}
+    <div style="grid-column:1/-1; text-align:center; padding:48px; color:var(--text-muted);">
+      <div style="font-size:48px; margin-bottom:12px;">🤍</div>
+      <p style="font-size:16px; font-weight:700; margin-bottom:8px;">Your wishlist is empty</p>
+      <p style="font-size:14px; margin-bottom:20px;">Save items you love to track prices and get AI recommendations.</p>
+      <a href="/products" class="btn-primary" style="display:inline-flex;">Explore Products</a>
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- Recently Price Dropped -->
+  {% if price_drops %}
+  <div class="price-drop-section">
+    <div class="section-header-row">
+      <h2>Recently Price Dropped</h2>
+      <span class="action-badge">⚡ Action Required</span>
+    </div>
+    {% for drop in price_drops %}
+    <div class="price-drop-card">
+      <div class="pd-thumb-sm">
+        {% if drop.image_url %}<img src="{{ url_for('static', filename='images/' + drop.image_url) }}" alt="">{% else %}💻{% endif %}
+      </div>
+      <div class="pd-drop-info">
+        <div class="pd-drop-name">{{ drop.product_name }}</div>
+        <div class="pd-drop-note">Price dropped this week</div>
+      </div>
+      <span class="pd-drop-pct">-{{ drop.drop_pct }}% Drop</span>
+      <div class="pd-drop-price">${{ "%.2f"|format(drop.price) }}</div>
+      <button class="grab-btn">Grab Deal</button>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <!-- Static price drop demos if none in DB -->
+  <div class="price-drop-section">
+    <div class="section-header-row">
+      <h2>Recently Price Dropped</h2>
+      <span class="action-badge">⚡ Action Required</span>
+    </div>
+    <div class="price-drop-card">
+      <div class="pd-thumb-sm">💻</div>
+      <div class="pd-drop-info">
+        <div class="pd-drop-name">X1 Carbon Generation Plus</div>
+        <div class="pd-drop-note">Price dropped 12% this week ($240 savings)</div>
+      </div>
+      <span class="pd-drop-pct">-12% Drop</span>
+      <div class="pd-drop-price">$1,759</div>
+      <button class="grab-btn">Grab Deal</button>
+    </div>
+    <div class="price-drop-card">
+      <div class="pd-thumb-sm">🕶</div>
+      <div class="pd-drop-info">
+        <div class="pd-drop-name">Lumina Horizon Sunwear</div>
+        <div class="pd-drop-note">Flash deal: Limited quantities remain</div>
+      </div>
+      <span class="pd-drop-pct">-25% Drop</span>
+      <div class="pd-drop-price">$89</div>
+      <button class="grab-btn">Grab Deal</button>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- AI-Curated Alternatives -->
+  <div class="section-header-row">
+    <h2>AI-Curated Alternatives</h2>
+    <div style="display:flex; gap:8px;">
+      <button class="filter-sort-btn">‹</button>
+      <button class="filter-sort-btn">›</button>
+    </div>
+  </div>
+  <div class="alt-grid" style="margin-bottom:40px;">
+    {% set alt_items = [
+      {'name':'AeroMesh Pro Executive Chair','note':'Better value for your Wishlist items.','price':499.00,'match':99,'icon':'🪑'},
+      {'name':'Nexus Mobile Prime 5G','note':'Based on your tech browsing habits.','price':349.00,'match':98,'icon':'📱'},
+      {'name':'SnapCapture Instant Mini','note':'Trending in your social circles.','price':129.00,'match':91,'icon':'📷'},
+      {'name':'Aura Phone X Series','note':'Similar specs to your saved items.','price':1099.00,'match':88,'icon':'📱'}
+    ] %}
+    {% for alt in alt_items %}
+    <div class="alt-card">
+      <div class="alt-img-wrap">
+        <div class="alt-img">{{ alt.icon }}</div>
+        <div class="alt-match">✦ {{ alt.match }}% Match</div>
+      </div>
+      <div class="alt-body">
+        <div class="alt-name">{{ alt.name }}</div>
+        <div class="alt-note">{{ alt.note }}</div>
+        <div class="alt-price-row">
+          <span class="alt-price">${{ "%.2f"|format(alt.price) }}</span>
+          <a href="#" class="alt-link">View Details →</a>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
 
 </div>
 
-{% endfor %}
+<footer class="sf-footer">
+  <span class="brand">ShopSmart AI</span>
+  <div class="sf-footer-links">
+    <a href="#">Privacy Policy</a>
+    <a href="#">Terms of Service</a>
+    <a href="#">AI Ethics</a>
+    <a href="#">Contact Support</a>
+    <a href="#">Returns</a>
+  </div>
+  <div class="sf-footer-icons">🌐 ✉</div>
+</footer>
 
 </body>
 </html>

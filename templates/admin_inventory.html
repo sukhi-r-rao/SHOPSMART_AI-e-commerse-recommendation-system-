@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Inventory Health — Nexus Admin</title>
+  <meta name="description" content="ShopSmart AI admin inventory health and stock management.">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='extra3.css') }}">
+  <style>
+    .inv-kpi-row { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:22px; }
+    .inv-kpi { background:white; border:1px solid var(--border); border-radius:var(--radius-lg); padding:18px 20px; display:flex; align-items:center; gap:14px; }
+    .inv-kpi-icon { width:42px; height:42px; border-radius:var(--radius); display:flex; align-items:center; justify-content:center; font-size:20px; flex-shrink:0; }
+    .inv-kpi-val { font-size:26px; font-weight:900; color:var(--text-primary); }
+    .inv-kpi-label { font-size:11px; color:var(--text-muted); font-weight:600; text-transform:uppercase; letter-spacing:.5px; margin-top:2px; }
+
+    .inv-alert { display:flex; align-items:center; gap:14px; padding:14px 20px; border-radius:var(--radius-lg); margin-bottom:20px; }
+    .inv-alert.critical { background:#FEF2F2; border:1px solid #FECACA; }
+    .inv-alert.warning { background:#FFFBEB; border:1px solid #FCD34D; }
+    .inv-alert .ia-text { flex:1; }
+    .inv-alert .ia-title { font-size:13px; font-weight:800; color:#DC2626; }
+    .inv-alert.warning .ia-title { color:#92400E; }
+    .inv-alert .ia-desc { font-size:12px; color:#991B1B; margin-top:2px; }
+    .inv-alert.warning .ia-desc { color:#78350F; }
+    .inv-alert-btn { padding:8px 16px; border:none; border-radius:var(--radius); font-size:12px; font-weight:700; cursor:pointer; }
+    .inv-alert-btn.red { background:#DC2626; color:white; }
+    .inv-alert-btn.amber { background:#D97706; color:white; }
+
+    .inv-toolbar { display:flex; align-items:center; gap:10px; margin-bottom:18px; }
+    .inv-search { flex:1; position:relative; }
+    .inv-search input { width:100%; padding:10px 14px 10px 38px; border:1.5px solid var(--border); border-radius:var(--radius); font-size:13px; outline:none; background:white; }
+    .inv-search input:focus { border-color:var(--primary); }
+    .inv-search .isi { position:absolute; left:12px; top:50%; transform:translateY(-50%); color:var(--text-muted); }
+    .inv-filter-btn { padding:9px 16px; border:1.5px solid var(--border); border-radius:var(--radius); font-size:12px; font-weight:600; color:var(--text-secondary); background:white; cursor:pointer; }
+    .inv-filter-btn.active { border-color:var(--primary); color:var(--primary); background:var(--primary-light); }
+
+    .inv-table-card { background:white; border:1px solid var(--border); border-radius:var(--radius-lg); overflow:hidden; }
+    .inv-table-header { display:flex; align-items:center; justify-content:space-between; padding:16px 20px; border-bottom:1px solid var(--border); }
+    .inv-table-header h3 { font-size:14px; font-weight:800; }
+    table.inv-tbl { width:100%; border-collapse:collapse; }
+    table.inv-tbl th { padding:11px 18px; text-align:left; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.6px; color:var(--text-muted); background:#FAFBFF; border-bottom:1px solid var(--border); }
+    table.inv-tbl td { padding:13px 18px; font-size:13px; color:var(--text-primary); border-bottom:1px solid var(--border); vertical-align:middle; }
+    table.inv-tbl tr:last-child td { border-bottom:none; }
+    table.inv-tbl tr:hover td { background:#FAFBFF; }
+
+    .prod-cell { display:flex; align-items:center; gap:11px; }
+    .prod-thumb { width:40px; height:40px; border-radius:var(--radius); border:1px solid var(--border); background:var(--bg); overflow:hidden; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:16px; }
+    .prod-thumb img { width:100%; height:100%; object-fit:cover; }
+    .prod-name { font-size:13px; font-weight:700; color:var(--text-primary); }
+    .prod-id { font-size:11px; color:var(--text-muted); }
+    .cat-pill { display:inline-flex; padding:3px 9px; border-radius:var(--radius-full); font-size:11px; font-weight:600; background:#EFF6FF; color:#1D4ED8; }
+
+    .stock-cell { display:flex; flex-direction:column; gap:5px; }
+    .stock-num { font-size:14px; font-weight:800; }
+    .stock-num.out { color:#DC2626; }
+    .stock-num.low { color:#F59E0B; }
+    .stock-num.ok { color:#10B981; }
+    .stock-bar-wrap { display:flex; align-items:center; gap:8px; }
+    .stock-bar { width:80px; height:5px; background:var(--border); border-radius:10px; overflow:hidden; }
+    .stock-bar-fill { height:100%; border-radius:10px; }
+    .stock-bar-fill.out { background:#EF4444; }
+    .stock-bar-fill.low { background:#F59E0B; }
+    .stock-bar-fill.med { background:#2563EB; }
+    .stock-bar-fill.ok { background:#10B981; }
+
+    .stock-badge { display:inline-flex; align-items:center; gap:4px; padding:3px 10px; border-radius:var(--radius-full); font-size:11px; font-weight:700; }
+    .stock-badge.out { background:#FEF2F2; color:#DC2626; }
+    .stock-badge.low { background:#FFF7ED; color:#C2410C; }
+    .stock-badge.medium { background:#EFF6FF; color:#1D4ED8; }
+    .stock-badge.healthy { background:#DCFCE7; color:#16A34A; }
+
+    .price-text { font-size:14px; font-weight:800; color:var(--text-primary); }
+    .act-btn { width:28px; height:28px; border:1px solid var(--border); border-radius:var(--radius); background:white; display:flex; align-items:center; justify-content:center; font-size:13px; cursor:pointer; }
+    .act-btn:hover { border-color:var(--primary); background:var(--primary-light); }
+    .act-btns { display:flex; gap:6px; }
+
+    .tbl-footer { display:flex; align-items:center; justify-content:space-between; padding:12px 18px; border-top:1px solid var(--border); }
+    .pg-info { font-size:12px; color:var(--text-muted); }
+    .pg-btns { display:flex; gap:5px; }
+    .pg-btn { width:30px; height:30px; border:1px solid var(--border); border-radius:var(--radius); background:white; font-size:12px; font-weight:600; cursor:pointer; display:flex; align-items:center; justify-content:center; color:var(--text-secondary); }
+    .pg-btn.active { background:var(--primary); color:white; border-color:var(--primary); }
+  </style>
+</head>
+<body>
+<div class="nexus-layout">
+  <aside class="nexus-sidebar">
+    <div class="nexus-brand">
+      <div class="nb-icon">⊞</div>
+      <div class="nb-name">Nexus</div>
+      <div class="nb-version">v4.2.0</div>
+    </div>
+    <div class="nexus-menu-label">MAIN MENU</div>
+    <nav class="nexus-nav">
+      <a href="/admin" class="nexus-nav-item"><span class="nni">⊞</span> Executive Overview</a>
+      <a href="/admin/orders" class="nexus-nav-item"><span class="nni">🧾</span> Orders</a>
+      <a href="/admin/inventory" class="nexus-nav-item active"><span class="nni">📦</span> Inventory Health</a>
+      <a href="/admin/users" class="nexus-nav-item"><span class="nni">👥</span> Users</a>
+      <a href="/admin/payments" class="nexus-nav-item"><span class="nni">💰</span> Revenue Analytics</a>
+      <a href="/admin/ai-insights" class="nexus-nav-item"><span class="nni">✦</span> AI Insights</a>
+    </nav>
+    <div class="nexus-user">
+      <div class="nexus-user-av">SA</div>
+      <div class="nexus-user-info">
+        <div class="un">Admin</div>
+        <div class="uv">v4.2.0</div>
+      </div>
+    </div>
+  </aside>
+
+  <div class="nexus-main">
+    <header class="nexus-topbar">
+      <h1>📦 Inventory Health</h1>
+      <div class="nexus-search"><span class="nsi">🔍</span><input type="text" placeholder="Search inventory…"></div>
+      <div class="nexus-topbar-actions">
+        <div class="nexus-icon-btn">🔔</div>
+        <button class="nexus-export-btn">⬇ Export</button>
+        <div class="nexus-avatar">SA</div>
+      </div>
+    </header>
+
+    <div class="nexus-content">
+
+      <!-- KPI Row -->
+      <div class="inv-kpi-row">
+        <div class="inv-kpi">
+          <div class="inv-kpi-icon" style="background:#DCFCE7;">✅</div>
+          <div>
+            <div class="inv-kpi-val" style="color:#16A34A;">{{ healthy_stock }}</div>
+            <div class="inv-kpi-label">Healthy Stock</div>
+          </div>
+        </div>
+        <div class="inv-kpi">
+          <div class="inv-kpi-icon" style="background:#EFF6FF;">🔵</div>
+          <div>
+            <div class="inv-kpi-val" style="color:#2563EB;">{{ medium_stock }}</div>
+            <div class="inv-kpi-label">Medium Stock</div>
+          </div>
+        </div>
+        <div class="inv-kpi">
+          <div class="inv-kpi-icon" style="background:#FFF7ED;">⚠️</div>
+          <div>
+            <div class="inv-kpi-val" style="color:#C2410C;">{{ low_stock }}</div>
+            <div class="inv-kpi-label">Low Stock (≤10)</div>
+          </div>
+        </div>
+        <div class="inv-kpi">
+          <div class="inv-kpi-icon" style="background:#FEF2F2;">❌</div>
+          <div>
+            <div class="inv-kpi-val" style="color:#DC2626;">{{ out_of_stock }}</div>
+            <div class="inv-kpi-label">Out of Stock</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Alerts -->
+      {% if out_of_stock > 0 %}
+      <div class="inv-alert critical">
+        <div style="font-size:22px;">🚨</div>
+        <div class="ia-text">
+          <div class="ia-title">{{ out_of_stock }} Product{{ 's' if out_of_stock != 1 }} Out of Stock</div>
+          <div class="ia-desc">These items are currently unavailable to customers. Restock immediately to avoid lost sales.</div>
+        </div>
+        <button class="inv-alert-btn red">Restock Now</button>
+      </div>
+      {% endif %}
+      {% if low_stock > 0 %}
+      <div class="inv-alert warning">
+        <div style="font-size:22px;">⚠️</div>
+        <div class="ia-text">
+          <div class="ia-title">{{ low_stock }} Product{{ 's' if low_stock != 1 }} Running Low</div>
+          <div class="ia-desc">{{ low_stock }} item{{ 's' if low_stock != 1 else '' }} have ≤10 units remaining. Consider placing restock orders soon.</div>
+        </div>
+        <button class="inv-alert-btn amber">Review Items</button>
+      </div>
+      {% endif %}
+
+      <!-- Toolbar -->
+      <div class="inv-toolbar">
+        <div class="inv-search">
+          <span class="isi">🔍</span>
+          <input type="text" id="invSearch" placeholder="Search product name or category…" oninput="filterInventory()">
+        </div>
+        <button class="inv-filter-btn active" onclick="filterStock('all',this)">All ({{ all_products | length }})</button>
+        <button class="inv-filter-btn" onclick="filterStock('out',this)">❌ Out of Stock ({{ out_of_stock }})</button>
+        <button class="inv-filter-btn" onclick="filterStock('low',this)">⚠️ Low ({{ low_stock }})</button>
+        <button class="inv-filter-btn" onclick="filterStock('healthy',this)">✅ Healthy ({{ healthy_stock }})</button>
+      </div>
+
+      <!-- Inventory Table -->
+      <div class="inv-table-card">
+        <div class="inv-table-header">
+          <h3>All Products — Stock Overview</h3>
+          <span style="font-size:12px;color:var(--text-muted);">{{ all_products | length }} total items · sorted by lowest stock</span>
+        </div>
+        <table class="inv-tbl" id="invTable">
+          <thead>
+            <tr>
+              <th>Product</th>
+              <th>Category</th>
+              <th>Price</th>
+              <th>Stock Level</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for product in all_products %}
+            {% set s = product.stock %}
+            {% set level = 'out' if s == 0 else ('low' if s <= 10 else ('medium' if s <= 50 else 'ok')) %}
+            {% set pct = [s * 2, 100] | min %}
+            <tr data-stock="{{ level }}">
+              <td>
+                <div class="prod-cell">
+                  <div class="prod-thumb">
+                    {% if product.image_url %}<img src="{{ url_for('static', filename='images/' + product.image_url) }}" alt="" onerror="this.style.display='none';this.parentElement.innerHTML='📦';">{% else %}📦{% endif %}
+                  </div>
+                  <div>
+                    <div class="prod-name">{{ product.product_name }}</div>
+                    <div class="prod-id">ID #{{ product.product_id }}</div>
+                  </div>
+                </div>
+              </td>
+              <td><span class="cat-pill">{{ product.category_name or 'General' }}</span></td>
+              <td><span class="price-text">${{ "%.2f"|format(product.price) }}</span></td>
+              <td>
+                <div class="stock-cell">
+                  <div class="stock-num {{ level }}">{{ s }} units</div>
+                  <div class="stock-bar-wrap">
+                    <div class="stock-bar">
+                      <div class="stock-bar-fill {{ level }}" style="width:{{ pct }}%"></div>
+                    </div>
+                  </div>
+                </div>
+              </td>
+              <td>
+                <span class="stock-badge {{ level }}">
+                  {{ '❌ Out of Stock' if level == 'out' else ('⚠️ Low Stock' if level == 'low' else ('🔵 Medium' if level == 'medium' else '✅ Healthy')) }}
+                </span>
+              </td>
+              <td>
+                <div class="act-btns">
+                  <a href="/product/{{ product.product_id }}" class="act-btn" title="View">👁</a>
+                  <button class="act-btn" title="Restock">📦</button>
+                  <button class="act-btn" title="Edit">✏️</button>
+                </div>
+              </td>
+            </tr>
+            {% else %}
+            <tr>
+              <td colspan="6" style="text-align:center;padding:48px;color:var(--text-muted);">
+                <div style="font-size:40px;margin-bottom:12px;">📦</div>
+                <div style="font-weight:700;">No products found</div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        <div class="tbl-footer">
+          <span class="pg-info">{{ all_products | length }} products total</span>
+          <div class="pg-btns">
+            <button class="pg-btn">‹</button>
+            <button class="pg-btn active">1</button>
+            <button class="pg-btn">›</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+    <footer class="nexus-footer">
+      <span class="nf-brand">Nexus Platform</span>
+      <span class="nf-copy">© 2024 Nexus Intelligence Platform • Enterprise Edition</span>
+      <div class="nexus-footer-links"><a href="#">Documentation</a><a href="#">API Status</a><a href="#">Support</a></div>
+    </footer>
+  </div>
+</div>
+
+<script>
+function filterInventory() {
+  const q = document.getElementById('invSearch').value.toLowerCase();
+  document.querySelectorAll('#invTable tbody tr').forEach(row => {
+    row.style.display = row.textContent.toLowerCase().includes(q) ? '' : 'none';
+  });
+}
+function filterStock(level, btn) {
+  document.querySelectorAll('.inv-filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('#invTable tbody tr').forEach(row => {
+    if (level === 'all') { row.style.display = ''; return; }
+    const s = row.dataset.stock;
+    row.style.display = (level === 'healthy' ? s === 'ok' || s === 'medium' : s === level) ? '' : 'none';
+  });
+}
+</script>
+</body>
+</html>

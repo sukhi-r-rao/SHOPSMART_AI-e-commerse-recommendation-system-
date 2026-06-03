@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Orders — ShopSmart AI</title>
+  <meta name="description" content="View your complete order history on ShopSmart AI.">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+    body{font-family:'Inter',system-ui,sans-serif;background:#F4F6FA;min-height:100vh;}
+
+    /* NAVBAR */
+    .nav{background:white;border-bottom:1px solid #E5E7EB;padding:0 32px;height:58px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50;}
+    .nav-brand{font-size:18px;font-weight:900;color:#2563EB;text-decoration:none;display:flex;align-items:center;gap:8px;}
+    .nav-links{display:flex;align-items:center;gap:20px;}
+    .nav-link{font-size:13px;font-weight:600;color:#64748B;text-decoration:none;transition:.15s;}
+    .nav-link:hover{color:#2563EB;}
+    .nav-link.active{color:#2563EB;}
+    .nav-user{display:flex;align-items:center;gap:8px;}
+    .nav-av{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#6366F1,#2563EB);color:white;font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center;}
+
+    /* PAGE */
+    .page-wrap{max-width:860px;margin:0 auto;padding:32px 20px;}
+    .page-header{margin-bottom:24px;}
+    .page-header h1{font-size:24px;font-weight:900;color:#1E293B;margin-bottom:4px;}
+    .page-header p{font-size:13px;color:#64748B;}
+    .page-header-row{display:flex;align-items:center;justify-content:space-between;}
+    .back-btn{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:#64748B;text-decoration:none;padding:7px 14px;border:1.5px solid #E5E7EB;border-radius:8px;background:white;transition:.15s;}
+    .back-btn:hover{border-color:#2563EB;color:#2563EB;}
+
+    /* FILTER TABS */
+    .filter-tabs{display:flex;gap:6px;margin-bottom:20px;flex-wrap:wrap;}
+    .filter-tab{padding:7px 16px;border:1.5px solid #E5E7EB;border-radius:20px;font-size:12px;font-weight:600;color:#64748B;background:white;cursor:pointer;transition:.15s;}
+    .filter-tab:hover{border-color:#2563EB;color:#2563EB;}
+    .filter-tab.active{background:#2563EB;color:white;border-color:#2563EB;}
+
+    /* ORDER CARD */
+    .order-card{background:white;border:1px solid #E5E7EB;border-radius:14px;margin-bottom:16px;overflow:hidden;transition:box-shadow .2s;}
+    .order-card:hover{box-shadow:0 4px 20px rgba(37,99,235,.08);}
+
+    .order-card-header{padding:16px 20px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #F1F5F9;flex-wrap:wrap;gap:10px;}
+    .order-id-row{display:flex;align-items:center;gap:10px;}
+    .order-id{font-size:14px;font-weight:800;color:#1E293B;}
+    .order-date{font-size:12px;color:#94A3B8;font-weight:500;}
+
+    .status-badge{display:inline-flex;align-items:center;gap:5px;padding:4px 12px;border-radius:20px;font-size:11px;font-weight:700;}
+    .status-badge.pending   {background:#FFF7ED;color:#C2410C;}
+    .status-badge.completed {background:#DCFCE7;color:#16A34A;}
+    .status-badge.cancelled {background:#FEF2F2;color:#DC2626;}
+    .status-badge.processing{background:#EFF6FF;color:#1D4ED8;}
+    .status-dot{width:6px;height:6px;border-radius:50%;background:currentColor;}
+
+    .order-meta{display:flex;align-items:center;gap:16px;}
+    .order-total{font-size:16px;font-weight:900;color:#1E293B;}
+    .order-payment{font-size:11px;color:#94A3B8;font-weight:500;}
+
+    /* ITEMS */
+    .order-items{padding:14px 20px;display:flex;flex-direction:column;gap:10px;}
+    .order-item{display:flex;align-items:center;gap:12px;}
+    .oi-thumb{width:48px;height:48px;border-radius:9px;border:1px solid #E5E7EB;background:#F8FAFF;flex-shrink:0;overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:18px;}
+    .oi-thumb img{width:100%;height:100%;object-fit:cover;}
+    .oi-name{flex:1;font-size:13px;font-weight:700;color:#1E293B;}
+    .oi-meta{font-size:11px;color:#94A3B8;margin-top:2px;}
+    .oi-price{font-size:13px;font-weight:800;color:#1E293B;text-align:right;flex-shrink:0;}
+    .oi-qty{font-size:11px;color:#64748B;text-align:right;}
+
+    .more-items-btn{font-size:12px;font-weight:600;color:#2563EB;background:none;border:none;cursor:pointer;padding:2px 0;}
+
+    /* FOOTER ROW */
+    .order-card-footer{padding:12px 20px;background:#FAFBFF;border-top:1px solid #F1F5F9;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;}
+    .pay-status{font-size:11px;font-weight:700;display:flex;align-items:center;gap:5px;}
+    .pay-status.paid{color:#16A34A;}
+    .pay-status.unpaid{color:#C2410C;}
+    .footer-actions{display:flex;gap:8px;}
+    .action-btn{padding:7px 14px;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;text-decoration:none;transition:.15s;}
+    .action-btn.outline{border:1.5px solid #E5E7EB;background:white;color:#374151;}
+    .action-btn.outline:hover{border-color:#2563EB;color:#2563EB;}
+    .action-btn.primary{background:linear-gradient(135deg,#2563EB,#4F46E5);color:white;border:none;}
+
+    /* EMPTY STATE */
+    .empty-state{text-align:center;padding:64px 20px;background:white;border:1px solid #E5E7EB;border-radius:14px;}
+    .empty-icon{font-size:56px;margin-bottom:16px;}
+    .empty-title{font-size:18px;font-weight:800;color:#1E293B;margin-bottom:8px;}
+    .empty-desc{font-size:13px;color:#64748B;margin-bottom:24px;}
+    .shop-btn{display:inline-flex;padding:11px 24px;background:linear-gradient(135deg,#2563EB,#4F46E5);color:white;border-radius:9px;font-size:13px;font-weight:700;text-decoration:none;}
+
+    /* SUMMARY BAR */
+    .summary-bar{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:22px;}
+    .sb-card{background:white;border:1px solid #E5E7EB;border-radius:10px;padding:14px 16px;text-align:center;}
+    .sb-val{font-size:22px;font-weight:900;color:#1E293B;margin-bottom:3px;}
+    .sb-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:#94A3B8;}
+  </style>
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav class="nav">
+  <a href="/" class="nav-brand">🛒 ShopSmart AI</a>
+  <div class="nav-links">
+    <a href="/products" class="nav-link">Products</a>
+    <a href="/cart" class="nav-link">🛒 Cart</a>
+    <a href="/wishlist" class="nav-link">🤍 Wishlist</a>
+    <a href="/orders" class="nav-link active">📦 Orders</a>
+    <a href="/recommendations" class="nav-link">✦ AI Picks</a>
+  </div>
+  <div class="nav-user">
+    <div class="nav-av">{{ user_name[0] | upper if user_name else 'U' }}</div>
+    <a href="/profile" class="nav-link" style="font-weight:700;color:#1E293B;">{{ user_name }}</a>
+  </div>
+</nav>
+
+<div class="page-wrap">
+
+  <!-- HEADER -->
+  <div class="page-header-row" style="margin-bottom:20px;">
+    <div class="page-header">
+      <h1>📦 My Orders</h1>
+      <p>Track and manage all your ShopSmart AI purchases</p>
+    </div>
+    <a href="/profile" class="back-btn">← Back to Dashboard</a>
+  </div>
+
+  <!-- SUMMARY BAR -->
+  {% set total_spent = orders_list | sum(attribute='total_amount') %}
+  {% set completed_count = orders_list | selectattr('order_status','equalto','Completed') | list | length %}
+  <div class="summary-bar">
+    <div class="sb-card">
+      <div class="sb-val">{{ orders_list | length }}</div>
+      <div class="sb-label">Total Orders</div>
+    </div>
+    <div class="sb-card">
+      <div class="sb-val" style="color:#2563EB;">
+        ${{ "%.2f"|format(total_spent) }}
+      </div>
+      <div class="sb-label">Total Spent</div>
+    </div>
+    <div class="sb-card">
+      <div class="sb-val" style="color:#10B981;">{{ completed_count }}</div>
+      <div class="sb-label">Completed</div>
+    </div>
+  </div>
+
+  <!-- FILTER TABS -->
+  <div class="filter-tabs">
+    <button class="filter-tab active" onclick="filterOrders('all',this)">All Orders ({{ orders_list | length }})</button>
+    <button class="filter-tab" onclick="filterOrders('pending',this)">⏳ Pending</button>
+    <button class="filter-tab" onclick="filterOrders('completed',this)">✅ Completed</button>
+    <button class="filter-tab" onclick="filterOrders('cancelled',this)">❌ Cancelled</button>
+  </div>
+
+  <!-- ORDERS LIST -->
+  {% if orders_list %}
+    {% for order in orders_list %}
+    {% set status = (order.order_status or 'Pending') | lower %}
+    <div class="order-card" data-status="{{ status }}">
+
+      <!-- Header -->
+      <div class="order-card-header">
+        <div class="order-id-row">
+          <div>
+            <div class="order-id">Order #{{ order.order_id }}</div>
+            <div class="order-date">
+              📅 {{ order.order_date.strftime('%d %b %Y, %I:%M %p') if order.order_date else 'Date unavailable' }}
+            </div>
+          </div>
+        </div>
+
+        <div class="order-meta">
+          <span class="status-badge {{ status }}">
+            <span class="status-dot"></span>
+            {{ order.order_status or 'Pending' }}
+          </span>
+          <div style="text-align:right;">
+            <div class="order-total">${{ "%.2f"|format(order.total_amount) }}</div>
+            <div class="order-payment">{{ order.payment_method or 'Cash On Delivery' }}</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Items -->
+      <div class="order-items">
+        {% if order.order_lines %}
+          {% for item in order.order_lines[:2] %}
+          <div class="order-item">
+            <div class="oi-thumb">
+              {% if item.image_url %}
+                <img src="{{ url_for('static', filename='images/' + item.image_url) }}"
+                     alt="{{ item.product_name }}"
+                     onerror="this.style.display='none';this.parentElement.innerHTML='📦';">
+              {% else %}📦{% endif %}
+            </div>
+            <div style="flex:1;">
+              <div class="oi-name">{{ item.product_name }}</div>
+              <div class="oi-meta">Qty: {{ item.quantity }} × ${{ "%.2f"|format(item.unit_price) }}</div>
+            </div>
+            <div>
+              <div class="oi-price">${{ "%.2f"|format(item.unit_price * item.quantity) }}</div>
+            </div>
+          </div>
+          {% endfor %}
+          {% if order.order_lines | length > 2 %}
+          <button class="more-items-btn">+ {{ order.order_lines | length - 2 }} more item{{ 's' if order.order_lines | length - 2 != 1 }}</button>
+          {% endif %}
+        {% else %}
+          <div style="font-size:13px;color:#94A3B8;padding:4px 0;">No item details available</div>
+        {% endif %}
+      </div>
+
+      <!-- Footer -->
+      <div class="order-card-footer">
+        <div class="pay-status {{ 'paid' if order.payment_status == 'Completed' else 'unpaid' }}">
+          {{ '✅ Payment Completed' if order.payment_status == 'Completed' else ('⏳ Payment Pending' if order.payment_status == 'Pending' else ('❌ ' + (order.payment_status or 'Unknown'))) }}
+        </div>
+        <div class="footer-actions">
+          <a href="/products" class="action-btn outline">🔄 Reorder</a>
+          <a href="/products" class="action-btn primary">🛍 Shop More</a>
+        </div>
+      </div>
+
+    </div>
+    {% endfor %}
+
+  {% else %}
+  <div class="empty-state">
+    <div class="empty-icon">📦</div>
+    <div class="empty-title">No orders yet</div>
+    <div class="empty-desc">You haven't placed any orders. Start shopping to see them here!</div>
+    <a href="/products" class="shop-btn">🛍 Start Shopping</a>
+  </div>
+  {% endif %}
+
+</div>
+
+<script>
+function filterOrders(status, btn) {
+  document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('.order-card').forEach(card => {
+    if (status === 'all') { card.style.display = ''; return; }
+    card.style.display = card.dataset.status === status ? '' : 'none';
+  });
+}
+</script>
+</body>
+</html>

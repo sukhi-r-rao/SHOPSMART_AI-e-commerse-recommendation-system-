@@ -1,37 +1,422 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Admin Dashboard</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard — ShopSmart AI</title>
+  <meta name="description" content="ShopSmart AI admin analytics dashboard with real-time data.">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='extra3.css') }}">
+  <style>
+    /* ── KPI GRID ── */
+    .kpi-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:22px; }
+    .kpi-card { background:white; border:1px solid #E5E7EB; border-radius:13px; padding:18px 20px; position:relative; overflow:hidden; }
+    .kpi-card::before { content:''; position:absolute; top:0; left:0; right:0; height:3px; }
+    .kpi-card.blue::before  { background:linear-gradient(90deg,#2563EB,#4F46E5); }
+    .kpi-card.green::before { background:linear-gradient(90deg,#10B981,#059669); }
+    .kpi-card.purple::before{ background:linear-gradient(90deg,#7C3AED,#6366F1); }
+    .kpi-card.orange::before{ background:linear-gradient(90deg,#F59E0B,#D97706); }
+    .kpi-top { display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; }
+    .kpi-icon { font-size:20px; }
+    .kpi-badge { font-size:10px; font-weight:700; padding:2px 7px; border-radius:20px; }
+    .kpi-badge.up   { background:#DCFCE7; color:#16A34A; }
+    .kpi-badge.down { background:#FEF2F2; color:#DC2626; }
+    .kpi-badge.warn { background:#FFF7ED; color:#C2410C; }
+    .kpi-label { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.7px; color:#94A3B8; margin-bottom:5px; }
+    .kpi-value { font-size:26px; font-weight:900; color:#1E293B; line-height:1; }
+    .kpi-sub { font-size:11px; color:#64748B; margin-top:5px; }
+    .kpi-sub span { font-weight:700; }
+
+    /* ── MIDDLE ROW ── */
+    .mid-row { display:grid; grid-template-columns:1fr 340px; gap:18px; margin-bottom:22px; }
+
+    /* Revenue chart */
+    .rev-card { background:white; border:1px solid #E5E7EB; border-radius:13px; padding:20px; }
+    .rev-card-header { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:18px; }
+    .rev-card-header h3 { font-size:15px; font-weight:800; color:#1E293B; margin-bottom:3px; }
+    .rev-card-header p  { font-size:12px; color:#94A3B8; }
+    .rev-big { font-size:28px; font-weight:900; color:#2563EB; }
+    .rev-big-sub { font-size:11px; color:#10B981; font-weight:700; }
+    .bar-chart-wrap { display:flex; align-items:flex-end; gap:10px; height:110px; }
+    .bar-col-real { display:flex; flex-direction:column; align-items:center; gap:5px; flex:1; }
+    .bar-fill-real { width:100%; border-radius:4px 4px 0 0; background:#BFDBFE; transition:all .3s; cursor:pointer; }
+    .bar-fill-real.peak { background:linear-gradient(180deg,#4F46E5,#2563EB); }
+    .bar-fill-real:hover { filter:brightness(1.1); }
+    .bar-label-real { font-size:10px; color:#94A3B8; font-weight:600; }
+
+    /* Stats panel */
+    .stats-panel { display:flex; flex-direction:column; gap:12px; }
+    .sp-card { background:white; border:1px solid #E5E7EB; border-radius:13px; padding:16px 18px; }
+    .sp-title { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.6px; color:#94A3B8; margin-bottom:10px; display:flex; align-items:center; justify-content:space-between; }
+    .sp-title a { font-weight:600; color:#2563EB; font-size:11px; text-transform:none; letter-spacing:0; text-decoration:none; }
+    .sp-row { display:flex; align-items:center; gap:10px; padding:7px 0; border-bottom:1px solid #F1F5F9; }
+    .sp-row:last-child { border-bottom:none; }
+    .sp-av { width:30px; height:30px; border-radius:50%; background:linear-gradient(135deg,#6366F1,#2563EB); color:white; font-size:11px; font-weight:800; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+    .sp-name { font-size:12px; font-weight:700; color:#1E293B; flex:1; }
+    .sp-meta { font-size:11px; color:#94A3B8; }
+    .sp-amount { font-size:13px; font-weight:800; color:#1E293B; }
+    .sp-status { padding:2px 8px; border-radius:20px; font-size:10px; font-weight:700; }
+    .sp-status.pending   { background:#FFF7ED; color:#C2410C; }
+    .sp-status.completed { background:#DCFCE7; color:#16A34A; }
+
+    /* ── BOTTOM ROW ── */
+    .bottom-row { display:grid; grid-template-columns:1fr 1fr 1fr; gap:18px; }
+    .bt-card { background:white; border:1px solid #E5E7EB; border-radius:13px; padding:18px 20px; }
+    .bt-card h4 { font-size:14px; font-weight:800; color:#1E293B; margin-bottom:3px; }
+    .bt-card-sub { font-size:11px; color:#94A3B8; margin-bottom:14px; }
+    .bt-card-link { font-size:11px; font-weight:700; color:#2563EB; text-decoration:none; float:right; margin-top:-18px; margin-bottom:14px; display:block; }
+
+    /* Top product */
+    .tp-img  { width:60px; height:70px; border-radius:10px; border:1px solid #E5E7EB; background:#F8FAFF; display:flex; align-items:center; justify-content:center; font-size:26px; overflow:hidden; flex-shrink:0; }
+    .tp-img img { width:100%; height:100%; object-fit:cover; }
+    .tp-info { display:flex; gap:12px; margin-bottom:12px; }
+    .tp-name { font-size:13px; font-weight:800; color:#1E293B; margin-bottom:4px; }
+    .tp-orders { font-size:11px; color:#10B981; font-weight:700; }
+    .tp-price { font-size:12px; color:#64748B; }
+    .tp-stock-bar { height:5px; background:#E5E7EB; border-radius:10px; overflow:hidden; margin-top:10px; }
+    .tp-stock-fill { height:100%; border-radius:10px; background:linear-gradient(90deg,#2563EB,#4F46E5); }
+    .tp-stock-label { display:flex; justify-content:space-between; font-size:10px; color:#94A3B8; margin-top:4px; }
+
+    /* Category dist */
+    .cat-row-real { display:flex; align-items:center; gap:10px; margin-bottom:9px; }
+    .cat-name-real { font-size:12px; color:#374151; width:100px; flex-shrink:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .cat-track-real { flex:1; height:6px; background:#E5E7EB; border-radius:10px; overflow:hidden; }
+    .cat-fill-real { height:100%; border-radius:10px; }
+    .cat-pct-real { font-size:11px; font-weight:700; color:#1E293B; width:32px; text-align:right; }
+    .cat-count { font-size:10px; color:#94A3B8; }
+
+    /* Quick stats */
+    .qs-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+    .qs-item { background:#F8FAFF; border-radius:9px; padding:12px; }
+    .qs-label { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:#94A3B8; margin-bottom:5px; }
+    .qs-val { font-size:20px; font-weight:900; color:#1E293B; }
+    .qs-val.red { color:#DC2626; }
+    .qs-val.green { color:#10B981; }
+    .qs-val.blue { color:#2563EB; }
+    .qs-val.purple { color:#7C3AED; }
+    .qs-sub { font-size:10px; color:#64748B; margin-top:3px; }
+  </style>
 </head>
 <body>
+<div class="nexus-layout">
 
-<h1>Admin Dashboard</h1>
+  <!-- SIDEBAR -->
+  <aside class="nexus-sidebar">
+    <div class="nexus-brand">
+      <div class="nb-icon">⊞</div>
+      <div class="nb-name">ShopSmart</div>
+      <div class="nb-version">Admin Panel</div>
+    </div>
+    <div class="nexus-menu-label">MAIN MENU</div>
+    <nav class="nexus-nav">
+      <a href="/admin"          class="nexus-nav-item active"><span class="nni">⊞</span> Dashboard</a>
+      <a href="/admin/users"    class="nexus-nav-item"><span class="nni">👥</span> Users</a>
+      <a href="/admin/orders"   class="nexus-nav-item"><span class="nni">🧾</span> Orders</a>
+      <a href="/admin/products" class="nexus-nav-item"><span class="nni">📦</span> Products</a>
+      <a href="/admin/payments" class="nexus-nav-item"><span class="nni">💳</span> Payments</a>
+    </nav>
+    <div class="nexus-user">
+      <div class="nexus-user-av">SA</div>
+      <div class="nexus-user-info">
+        <div class="un">Super Admin</div>
+        <div class="uv">ShopSmart AI</div>
+      </div>
+    </div>
+  </aside>
 
-<hr>
+  <!-- MAIN -->
+  <div class="nexus-main">
+    <header class="nexus-topbar">
+      <h1>Admin Dashboard</h1>
+      <div class="nexus-search">
+        <span class="nsi">🔍</span>
+        <input type="text" placeholder="Search anything…">
+      </div>
+      <div class="nexus-topbar-actions">
+        <div class="nexus-icon-btn">🔔</div>
+        <a href="/admin/export-users" class="nexus-export-btn" style="text-decoration:none;">⬇ Export</a>
+        <div class="nexus-avatar">SA</div>
+      </div>
+    </header>
 
-<h2>Total Users</h2>
-<p>{{ users.total_users }}</p>
+    <div class="nexus-content">
 
-<h2>Total Products</h2>
-<p>{{ products.total_products }}</p>
+      <!-- ── KPI CARDS ── -->
+      <div class="kpi-grid">
 
-<h2>Total Orders</h2>
-<p>{{ orders.total_orders }}</p>
+        <!-- Revenue -->
+        <div class="kpi-card blue">
+          <div class="kpi-top">
+            <div class="kpi-icon">💰</div>
+            {% if total_revenue > 0 %}
+              <span class="kpi-badge up">✓ Paid</span>
+            {% else %}
+              <span class="kpi-badge warn">No Data</span>
+            {% endif %}
+          </div>
+          <div class="kpi-label">Total Revenue</div>
+          <div class="kpi-value">
+            {% if total_revenue >= 1000000 %}
+              ${{ "%.1f"|format(total_revenue/1000000) }}M
+            {% elif total_revenue >= 1000 %}
+              ${{ "%.1f"|format(total_revenue/1000) }}k
+            {% else %}
+              ${{ "%.2f"|format(total_revenue) }}
+            {% endif %}
+          </div>
+          <div class="kpi-sub">All payments: <span>${{ "%.2f"|format(all_payments_total) }}</span></div>
+        </div>
 
-<h2>Total Payments</h2>
-<p>{{ payments.total_payments }}</p>
+        <!-- Orders -->
+        <div class="kpi-card green">
+          <div class="kpi-top">
+            <div class="kpi-icon">🛒</div>
+            {% if pending_orders > 0 %}
+              <span class="kpi-badge warn">{{ pending_orders }} Pending</span>
+            {% else %}
+              <span class="kpi-badge up">All Clear</span>
+            {% endif %}
+          </div>
+          <div class="kpi-label">Total Orders</div>
+          <div class="kpi-value">{{ total_orders }}</div>
+          <div class="kpi-sub">Completed: <span>{{ completed_orders }}</span> · Pending: <span>{{ pending_orders }}</span></div>
+        </div>
 
-<hr>
+        <!-- Customers -->
+        <div class="kpi-card purple">
+          <div class="kpi-top">
+            <div class="kpi-icon">👥</div>
+            <span class="kpi-badge up">{{ total_admins }} Admin{{ 's' if total_admins != 1 }}</span>
+          </div>
+          <div class="kpi-label">Total Users</div>
+          <div class="kpi-value">{{ total_users }}</div>
+          <div class="kpi-sub">Customers: <span>{{ total_customers }}</span> · Conv: <span>{{ conversion_rate }}%</span></div>
+        </div>
 
-<a href="/admin/users">Manage Users</a>
+        <!-- Products / Inventory -->
+        <div class="kpi-card orange">
+          <div class="kpi-top">
+            <div class="kpi-icon">📦</div>
+            {% if out_of_stock > 0 %}
+              <span class="kpi-badge down">{{ out_of_stock }} Out</span>
+            {% elif low_stock_count > 0 %}
+              <span class="kpi-badge warn">{{ low_stock_count }} Low</span>
+            {% else %}
+              <span class="kpi-badge up">Stock OK</span>
+            {% endif %}
+          </div>
+          <div class="kpi-label">Total Products</div>
+          <div class="kpi-value">{{ total_products }}</div>
+          <div class="kpi-sub">Out of stock: <span>{{ out_of_stock }}</span> · Low: <span>{{ low_stock_count }}</span></div>
+        </div>
 
-<br><br>
+      </div><!-- /kpi-grid -->
 
-<a href="/admin/products">Manage Products</a>
+      <!-- ── MID ROW: Chart + Recent ── -->
+      <div class="mid-row">
 
-<br><br>
+        <!-- Revenue Bar Chart -->
+        <div class="rev-card">
+          <div class="rev-card-header">
+            <div>
+              <h3>Revenue Trends</h3>
+              <p>Monthly order revenue from database</p>
+            </div>
+            <div>
+              <div class="rev-big">
+                {% if total_revenue >= 1000 %}
+                  ${{ "%.1f"|format(total_revenue/1000) }}k
+                {% else %}
+                  ${{ "%.2f"|format(total_revenue) }}
+                {% endif %}
+              </div>
+              <div class="rev-big-sub">↑ Completed revenue</div>
+            </div>
+          </div>
+          <div class="bar-chart-wrap">
+            {% for bar in monthly_chart %}
+            <div class="bar-col-real">
+              <div class="bar-fill-real {{ 'peak' if loop.last else '' }}"
+                   style="height:{{ bar.height }}%;"
+                   title="{{ bar.label }}"></div>
+              <div class="bar-label-real">{{ bar.label }}</div>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
 
-<a href="/admin/orders">Manage Orders</a>
+        <!-- Recent Orders Panel -->
+        <div class="stats-panel">
+          <div class="sp-card">
+            <div class="sp-title">
+              Recent Orders
+              <a href="/admin/orders">View All →</a>
+            </div>
+            {% for o in recent_orders %}
+            <div class="sp-row">
+              <div class="sp-av">{{ (o.first_name[0] + o.last_name[0]) | upper if o.last_name else o.first_name[0] | upper }}</div>
+              <div>
+                <div class="sp-name">{{ o.first_name }} {{ o.last_name }}</div>
+                <div class="sp-meta">#{{ o.order_id }} · {{ o.order_date.strftime('%d %b') if o.order_date else '—' }}</div>
+              </div>
+              <div style="text-align:right;">
+                <div class="sp-amount">${{ "%.0f"|format(o.total_amount) }}</div>
+                <span class="sp-status {{ o.order_status | lower if o.order_status else 'pending' }}">
+                  {{ o.order_status or 'Pending' }}
+                </span>
+              </div>
+            </div>
+            {% else %}
+            <div style="text-align:center;padding:20px;color:#94A3B8;font-size:12px;">No orders yet</div>
+            {% endfor %}
+          </div>
+        </div>
 
+      </div><!-- /mid-row -->
+
+      <!-- ── BOTTOM ROW ── -->
+      <div class="bottom-row">
+
+        <!-- Top Product Performance -->
+        <div class="bt-card">
+          <h4>🏆 Top Product</h4>
+          <a href="/admin/products" class="bt-card-link">View All →</a>
+          <div class="bt-card-sub">Best performer by order count</div>
+
+          {% if top_product %}
+          <div class="tp-info">
+            <div class="tp-img">
+              {% if top_product.image_url %}
+                <img src="{{ url_for('static', filename='images/' + top_product.image_url) }}"
+                     alt="{{ top_product.product_name }}"
+                     onerror="this.style.display='none';this.parentElement.innerHTML='📦';">
+              {% else %}📦{% endif %}
+            </div>
+            <div>
+              <div class="tp-name">{{ top_product.product_name }}</div>
+              <div class="tp-orders">↑ {{ top_product.order_count }} orders placed</div>
+              <div class="tp-price">${{ "%.2f"|format(top_product.price) }} MSRP</div>
+            </div>
+          </div>
+          {% set stock_pct = [top_product.stock * 2, 100] | min %}
+          <div class="tp-stock-bar">
+            <div class="tp-stock-fill" style="width:{{ stock_pct }}%;"></div>
+          </div>
+          <div class="tp-stock-label">
+            <span>Stock: {{ top_product.stock }} units</span>
+            <span>{{ stock_pct }}%</span>
+          </div>
+          {% else %}
+          <div style="text-align:center;padding:20px;color:#94A3B8;font-size:13px;">No order data yet</div>
+          {% endif %}
+
+          <!-- Top 5 products mini list -->
+          {% if top_products %}
+          <div style="margin-top:12px;border-top:1px solid #F1F5F9;padding-top:10px;">
+            {% for p in top_products %}
+            <div style="display:flex;align-items:center;gap:8px;padding:5px 0;font-size:12px;border-bottom:1px solid #F9FAFB;">
+              <span style="font-weight:800;color:#94A3B8;width:16px;">{{ loop.index }}</span>
+              <span style="flex:1;color:#374151;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ p.product_name }}</span>
+              <span style="font-weight:800;color:#2563EB;">{{ p.order_count }}</span>
+            </div>
+            {% endfor %}
+          </div>
+          {% endif %}
+        </div>
+
+        <!-- Category Distribution -->
+        <div class="bt-card">
+          <h4>📊 Category Distribution</h4>
+          <a href="/admin/products" class="bt-card-link">View All →</a>
+          <div class="bt-card-sub">Products per category from DB</div>
+
+          {% set colors = ['#2563EB','#7C3AED','#10B981','#F59E0B'] %}
+          {% for cat in category_dist %}
+          <div class="cat-row-real">
+            <span class="cat-name-real" title="{{ cat.name }}">{{ cat.name }}</span>
+            <div class="cat-track-real">
+              <div class="cat-fill-real" style="width:{{ cat.pct }}%;background:{{ colors[loop.index0 % 4] }};"></div>
+            </div>
+            <span class="cat-pct-real">{{ cat.pct }}%</span>
+          </div>
+          {% else %}
+          <div style="text-align:center;padding:20px;color:#94A3B8;font-size:12px;">No categories found</div>
+          {% endfor %}
+
+          <!-- Quick Stats below -->
+          <div class="qs-grid" style="margin-top:14px;">
+            <div class="qs-item">
+              <div class="qs-label">Total Users</div>
+              <div class="qs-val blue">{{ total_users }}</div>
+              <div class="qs-sub">{{ total_customers }} customers</div>
+            </div>
+            <div class="qs-item">
+              <div class="qs-label">Pending Pay</div>
+              <div class="qs-val {{ 'red' if pending_payments > 0 else 'green' }}">{{ pending_payments }}</div>
+              <div class="qs-sub">{{ 'Needs review' if pending_payments > 0 else 'All settled' }}</div>
+            </div>
+            <div class="qs-item">
+              <div class="qs-label">Out of Stock</div>
+              <div class="qs-val {{ 'red' if out_of_stock > 0 else 'green' }}">{{ out_of_stock }}</div>
+              <div class="qs-sub">{{ 'Restock needed' if out_of_stock > 0 else 'Stock healthy' }}</div>
+            </div>
+            <div class="qs-item">
+              <div class="qs-label">Conversion</div>
+              <div class="qs-val purple">{{ conversion_rate }}%</div>
+              <div class="qs-sub">Orders/Users</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Recent Users -->
+        <div class="bt-card">
+          <h4>👤 Recent Users</h4>
+          <a href="/admin/users" class="bt-card-link">View All →</a>
+          <div class="bt-card-sub">Latest registered accounts</div>
+
+          {% for u in recent_users %}
+          <div class="sp-row">
+            <div class="sp-av" style="background:linear-gradient(135deg,{{ ['#2563EB','#7C3AED','#10B981','#F59E0B','#EF4444'][loop.index0 % 5] }},{{ ['#4F46E5','#6366F1','#059669','#D97706','#DC2626'][loop.index0 % 5] }});">
+              {{ (u.first_name[0] + (u.last_name[0] if u.last_name else '')) | upper }}
+            </div>
+            <div style="flex:1;min-width:0;">
+              <div class="sp-name" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ u.first_name }} {{ u.last_name }}</div>
+              <div class="sp-meta" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ u.email }}</div>
+            </div>
+            <span class="sp-status {{ 'completed' if u.role_id == 1 else 'pending' }}" style="{{ 'background:#EDE9FE;color:#7C3AED;' if u.role_id == 1 else '' }}">
+              {{ 'Admin' if u.role_id == 1 else 'Customer' }}
+            </span>
+          </div>
+          {% else %}
+          <div style="text-align:center;padding:20px;color:#94A3B8;font-size:12px;">No users yet</div>
+          {% endfor %}
+
+          <div style="margin-top:14px;padding-top:12px;border-top:1px solid #F1F5F9;display:flex;justify-content:space-between;font-size:12px;">
+            <span style="color:#64748B;">Total Admins</span>
+            <strong style="color:#7C3AED;">{{ total_admins }}</strong>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:12px;margin-top:5px;">
+            <span style="color:#64748B;">Total Customers</span>
+            <strong style="color:#2563EB;">{{ total_customers }}</strong>
+          </div>
+        </div>
+
+      </div><!-- /bottom-row -->
+
+    </div><!-- /nexus-content -->
+
+    <footer class="nexus-footer">
+      <span class="nf-brand">ShopSmart AI</span>
+      <span class="nf-copy">© 2024 ShopSmart AI • Admin Panel • All data live from database</span>
+      <div class="nexus-footer-links">
+        <a href="/admin/orders">Orders</a>
+        <a href="/admin/products">Products</a>
+        <a href="/admin/payments">Payments</a>
+        <a href="/admin/users">Users</a>
+      </div>
+    </footer>
+
+  </div><!-- /nexus-main -->
+</div><!-- /nexus-layout -->
 </body>
 </html>

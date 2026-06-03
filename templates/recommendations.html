@@ -1,34 +1,229 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Recommendations</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Recommendations — ShopSmart AI</title>
+  <meta name="description" content="Personalized AI-powered product recommendations designed uniquely for you on ShopSmart AI.">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='extra2.css') }}">
 </head>
-<body>
+<body class="rec-body">
 
-<h1>Recommended Products</h1>
+<!-- NAVBAR -->
+<nav class="sf-navbar">
+  <a href="/" class="sf-brand">
+    <div class="sf-brand-icon">🛒</div> ShopSmart AI
+  </a>
+  <div class="sf-nav">
+    <a href="/products">Shop</a>
+    <a href="#">Deals</a>
+    <a href="#">Categories</a>
+    <a href="/recommendations" class="active">AI Picks</a>
+  </div>
+  <div class="sf-search">
+    <span class="si">🔍</span>
+    <form action="/search" method="GET">
+      <input type="text" name="q" placeholder="Search personalized deals…">
+    </form>
+  </div>
+  <div class="sf-actions">
+    <div class="sf-user-btn">☰</div>
+    <a href="#" class="sf-action-link"><span class="icon">🔔</span></a>
+    <a href="/profile" class="sf-user-btn">👤</a>
+  </div>
+</nav>
 
-{% for item in recommendations %}
+<div class="rec-content">
 
-<div style="
-border:1px solid black;
-padding:15px;
-margin:15px;
-width:300px;
-">
+  <!-- HERO -->
+  <div class="rec-hero">
+    <div>
+      <div class="rec-badge">✦ AI-Driven Commerce</div>
+      <h1>Recommendations <span>Designed Just For You</span></h1>
+      <p>Our AI analyzes your unique shopping patterns, aesthetic preferences, and browsing intent to curate a personalized ecosystem of products.</p>
+      <div class="rec-stats-row">
+        <div class="rec-stat">
+          <div class="rv">{{ rec_count or 128 }}</div>
+          <div class="rl">PICKS</div>
+        </div>
+        <div class="rec-stat">
+          <div class="rv">96%</div>
+          <div class="rl">MATCH</div>
+        </div>
+        <div class="rec-stat">
+          <div class="rv">{{ views_count or 42 }}</div>
+          <div class="rl">VIEWS</div>
+        </div>
+      </div>
+    </div>
+    <div class="rec-hero-visual">🤖</div>
+  </div>
 
-<h2>{{ item.product_name }}</h2>
+  <!-- FILTERS -->
+  <div class="rec-filters">
+    <button class="rec-filter-btn active">✦ Refine Recommendations</button>
+    <button class="rec-filter-btn">Electronics</button>
+    <button class="rec-filter-btn">Lifestyle</button>
+    <button class="rec-filter-btn">Apparel</button>
+    <div class="rec-score-filter">
+      <span>Match Score:</span>
+      <input type="range" min="50" max="100" value="88" style="accent-color:var(--primary); width:100px;">
+      <span style="font-weight:700; color:var(--primary);">88% Confidence</span>
+    </div>
+  </div>
 
-<p>₹{{ item.price }}</p>
+  <!-- 2-COL: Why These Picks + Featured Rec -->
+  <div class="rec-two-col" style="margin-bottom:28px;">
+    <div class="why-card">
+      <div class="why-title">
+        Why these picks?
+        <span style="font-size:14px; cursor:pointer;">ℹ</span>
+      </div>
+      <div style="font-size:11px; color:var(--text-muted); margin-bottom:10px; font-weight:600;">INFERRED TASTE</div>
+      <span class="interest-tag active">Electronics Enthusiast</span>
+      <span class="interest-tag">Recent Search: Smart Watches</span>
+      <span class="interest-tag">Wallet Influence: High</span>
+      <span class="interest-tag">Tech-Forward Aesthetic</span>
+      <p class="profile-quote">"Your ultimate AI high-performance wardrobe and recent activity of photography gear suggests a preference for the Professional Series ecosystem."</p>
+    </div>
 
-<p>Score: {{ item.score }}</p>
+    <div class="rec-featured">
+      <div class="rec-featured-img">
+        {% if featured_product and featured_product.image_url %}
+          <img src="{{ url_for('static', filename='images/' + featured_product.image_url) }}" alt="{{ featured_product.product_name }}">
+        {% else %}
+          ⌚
+        {% endif %}
+        <div class="rec-tag">✦ 98% MATCH</div>
+      </div>
+      <div>
+        <div class="rec-featured-label">RECOMMENDED FOR YOU</div>
+        <div class="rec-featured-name">{{ featured_product.product_name if featured_product else 'Titanium Pro Series 5' }}</div>
+        <div class="rec-featured-price">${{ "%.2f"|format(featured_product.price) if featured_product else '499.00' }}</div>
+        <div class="rec-featured-desc">The AI picked this based on your 24-month loyalty to the Titanium ecosystem and recent comparison searches for Series 4. It offers the specific fitness tracking features you prioritized last Tuesday.</div>
+        <button class="rec-add-btn" onclick="window.location='/add-to-cart/{{ featured_product.product_id if featured_product else 0 }}'">Add to Cart</button>
+        <button class="rec-wish-btn">🤍</button>
+      </div>
+    </div>
+  </div>
 
-<a href="/product/{{ item.product_id }}">
-View Product
-</a>
+  <!-- BASED ON BROWSING HISTORY -->
+  <div class="rec-browse-section">
+    <div class="rec-browse-header">
+      <div>
+        <h2 style="font-size:18px; font-weight:800;">Based On Your Browsing History</h2>
+        <p style="font-size:12px; color:var(--text-muted);">Items similar to your views in Photography &amp; Audio</p>
+      </div>
+      <a href="#" style="font-size:13px; color:var(--primary); font-weight:600;">View All Activity →</a>
+    </div>
+    <div class="rec-browse-grid">
+      {% set browse_icons = ['🔭','🎧','🎮','📷'] %}
+      {% for product in browse_products %}
+      {% set idx = loop.index0 %}
+      <div class="rec-item-card">
+        {% if product.image_url %}
+          <img class="rec-item-img" src="{{ url_for('static', filename='images/' + product.image_url) }}" alt="{{ product.product_name }}"
+            onerror="this.style.display='none';">
+        {% else %}
+          <div class="rec-item-img">{{ browse_icons[idx % 4] }}</div>
+        {% endif %}
+        <div class="rec-item-body">
+          <div class="rec-item-name">{{ product.product_name }}</div>
+          <div class="rec-item-cat">{{ product.category_name or 'Electronics' }}</div>
+          <div class="rec-item-price-row">
+            <span class="rec-item-price">${{ "%.2f"|format(product.price) }}</span>
+            <span class="rec-item-match">✦ 9{{ (loop.index * 3) % 10 }}% Match</span>
+          </div>
+        </div>
+      </div>
+      {% else %}
+      {% set defaults = [
+        {'n':'Prime 80mm f/1.4 Lens','p':1190,'cat':'Photography','icon':'🔭','m':94},
+        {'n':'Studio Wireless Pro','p':560,'cat':'Audio','icon':'🎧','m':89},
+        {'n':'Nebula Handheld Console','p':990,'cat':'Gaming','icon':'🎮','m':96},
+        {'n':'Instant Retro Cam','p':319,'cat':'Lifestyle','icon':'📷','m':91}
+      ] %}
+      {% for d in defaults %}
+      <div class="rec-item-card">
+        <div class="rec-item-img">{{ d.icon }}</div>
+        <div class="rec-item-body">
+          <div class="rec-item-name">{{ d.n }}</div>
+          <div class="rec-item-cat">{{ d.cat }}</div>
+          <div class="rec-item-price-row">
+            <span class="rec-item-price">${{ "%.2f"|format(d.p) }}</span>
+            <span class="rec-item-match">✦ {{ d.m }}% Match</span>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- AI INTEREST PROFILE -->
+  <div class="interest-profile">
+    <div>
+      <div class="ip-title">Your AI Interest Profile</div>
+      <div class="ip-subtitle">An evolving dashboard reflecting how you've interacted with the store. The more you shop, the sharper it gets.</div>
+      <div class="ip-bar-row">
+        <div class="ip-bar-label"><span class="il">Tech &amp; Innovation</span><span class="iv">69%</span></div>
+        <div class="ip-bar"><div class="ip-bar-fill tech" style="width:69%"></div></div>
+      </div>
+      <div class="ip-bar-row">
+        <div class="ip-bar-label"><span class="il">Modern &amp; Sleek</span><span class="iv">40%</span></div>
+        <div class="ip-bar"><div class="ip-bar-fill modern" style="width:40%"></div></div>
+      </div>
+      <div class="ip-bar-row">
+        <div class="ip-bar-label"><span class="il">Wellness &amp; Sport</span><span class="iv">25%</span></div>
+        <div class="ip-bar"><div class="ip-bar-fill wellness" style="width:25%"></div></div>
+      </div>
+    </div>
+    <div class="ip-card">
+      <div class="ipc-label">Active Cycle</div>
+      <div class="ipc-value">Peak: PM</div>
+      <div class="ipc-sub">You browse most between 7pm–10pm</div>
+    </div>
+    <div class="ip-card">
+      <div class="ipc-label">Smart Points</div>
+      <div class="ipc-value">3.2k</div>
+      <div class="ipc-sub">Earned from AI-matched purchases</div>
+    </div>
+  </div>
+
+  <!-- SIMILAR MINDS WANT -->
+  <div style="margin-bottom:12px;">
+    <h2 style="font-size:18px; font-weight:800;">Similar Minds Want…</h2>
+  </div>
+  <div class="similar-minds">
+    <div class="sm-card">
+      <div class="sm-card-overlay">
+        <div class="sm-label">SURFACE THINKING · INTROSPECTIVE</div>
+        <div class="sm-name">Eames-Style Lounge</div>
+        <div class="sm-desc">Often purchased by Electronics Enthusiasts updating their workspace.</div>
+      </div>
+    </div>
+    <div class="sm-card" style="background:linear-gradient(135deg,#4F46E5,#7C3AED);">
+      <div class="sm-card-overlay">
+        <div class="sm-label">14% of users with your profile also viewed it.</div>
+        <div class="sm-name">Nebula X Pro</div>
+        <div class="sm-desc">14% of users with your profile also viewed it.</div>
+      </div>
+    </div>
+  </div>
 
 </div>
 
-{% endfor %}
+<footer class="sf-footer">
+  <span class="brand">ShopSmart AI</span>
+  <div class="sf-footer-links">
+    <a href="#">Privacy Policy</a>
+    <a href="#">Terms of Service</a>
+    <a href="#">AI Ethics</a>
+    <a href="#">Contact Support</a>
+  </div>
+  <div class="sf-footer-icons">🌐 ⚙</div>
+</footer>
 
 </body>
 </html>

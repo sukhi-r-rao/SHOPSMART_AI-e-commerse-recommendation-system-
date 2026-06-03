@@ -1,53 +1,178 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Register</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Create Account — ShopSmart AI</title>
+  <meta name="description" content="Create your ShopSmart AI account to start receiving personalized AI product recommendations tailored just for you.">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
 
-<h1>Register</h1>
+<div class="auth-layout">
 
-<form method="POST">
+  <!-- ===== LEFT PANEL ===== -->
+  <div class="auth-left">
+    <div class="auth-logo">
+      <div class="auth-logo-icon">🛒</div>
+      ShopSmart AI
+    </div>
 
-    <input type="text"
-           name="first_name"
-           placeholder="First Name"
-           required>
+    <div class="auth-hero-image">
+      <img src="{{ url_for('static', filename='images/register_hero.png') }}" alt="Join ShopSmart AI">
+    </div>
 
-    <br><br>
+    <div class="auth-left-content">
+      <h2>Join the Future of Shopping</h2>
+      <p>Create your account to start receiving personalized AI product recommendations tailored just for you.</p>
+      <div class="auth-tags">
+        <span class="auth-tag">✦ AI Recommendations</span>
+        <span class="auth-tag">🔍 Smart Search</span>
+        <span class="auth-tag">💝 Wishlist Tracking</span>
+        <span class="auth-tag">🛡 Secure Checkout</span>
+      </div>
+    </div>
 
-    <input type="text"
-           name="last_name"
-           placeholder="Last Name"
-           required>
+    <div class="auth-footer">
+      © 2024 ShopSmart AI. Redefining e-commerce through innovation.
+    </div>
+  </div>
 
-    <br><br>
+  <!-- ===== RIGHT PANEL ===== -->
+  <div class="auth-right">
+    <div class="auth-card fade-in-up">
+      <h2>Create Account</h2>
+      <p class="subtitle">Enter your details to get started</p>
 
-    <input type="email"
-           name="email"
-           placeholder="Email"
-           required>
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <div class="flash-messages">
+            {% for cat, msg in messages %}
+              <div class="flash-msg {{ cat }}">{{ msg }}</div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% endwith %}
 
-    <br><br>
+      <form method="POST" action="/register">
 
-    <input type="password"
-           name="password"
-           placeholder="Password"
-           required>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">First Name</label>
+            <div class="input-wrap">
+              <span class="input-icon">👤</span>
+              <input
+                id="first_name"
+                type="text"
+                name="first_name"
+                class="form-input"
+                placeholder="John"
+                required
+                autocomplete="given-name"
+              >
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Last Name</label>
+            <div class="input-wrap">
+              <span class="input-icon">🪪</span>
+              <input
+                id="last_name"
+                type="text"
+                name="last_name"
+                class="form-input"
+                placeholder="Doe"
+                required
+                autocomplete="family-name"
+              >
+            </div>
+          </div>
+        </div>
 
-    <br><br>
+        <div class="form-group">
+          <label class="form-label">Email Address</label>
+          <div class="input-wrap">
+            <span class="input-icon">✉</span>
+            <input
+              id="email"
+              type="email"
+              name="email"
+              class="form-input"
+              placeholder="john.doe@example.com"
+              required
+              autocomplete="email"
+            >
+          </div>
+        </div>
 
-    <input type="text"
-           name="phone"
-           placeholder="Phone">
+        <div class="form-group">
+          <label class="form-label">Phone Number</label>
+          <div class="input-wrap">
+            <span class="input-icon">📞</span>
+            <input
+              id="phone"
+              type="tel"
+              name="phone"
+              class="form-input"
+              placeholder="+1 (555) 000-0000"
+              autocomplete="tel"
+            >
+          </div>
+        </div>
 
-    <br><br>
+        <div class="form-group">
+          <label class="form-label">Password</label>
+          <div class="input-wrap">
+            <span class="input-icon">🔒</span>
+            <input
+              id="password"
+              type="password"
+              name="password"
+              class="form-input"
+              placeholder="••••••••"
+              required
+              autocomplete="new-password"
+            >
+          </div>
+        </div>
 
-    <button type="submit">
-        Register
-    </button>
+        <div class="form-group">
+          <label class="form-label">Confirm Password</label>
+          <div class="input-wrap">
+            <span class="input-icon">🔁</span>
+            <input
+              id="confirm_password"
+              type="password"
+              name="confirm_password"
+              class="form-input"
+              placeholder="••••••••"
+              autocomplete="new-password"
+            >
+          </div>
+        </div>
 
-</form>
+        <div class="form-check">
+          <input type="checkbox" id="terms" name="terms" required>
+          <label for="terms">I agree to the <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a>.</label>
+        </div>
+
+        <button type="submit" class="btn-auth">
+          Create Account &nbsp;→
+        </button>
+
+        <p class="auth-switch">
+          Already have an account? <a href="/login">Sign In</a>
+        </p>
+
+        <div class="secure-note">
+          🛡 Secure Registration: Data encrypted &amp; protected
+        </div>
+
+      </form>
+    </div>
+  </div>
+
+</div>
 
 </body>
 </html>

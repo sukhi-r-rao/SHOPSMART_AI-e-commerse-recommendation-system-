@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard — ShopSmart AI</title>
+  <meta name="description" content="Your ShopSmart AI personalized merchant portal — view orders, wishlist, recommendations and AI insights.">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<div class="app-layout">
+
+  <!-- ======= SIDEBAR ======= -->
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <div class="sidebar-brand-icon">✦</div>
+      <div class="sidebar-brand-text">
+        <div class="brand-name">ShopSmart AI</div>
+        <div class="brand-sub">Merchant Portal</div>
+      </div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <a href="/profile" class="sidebar-nav-item active">
+        <span class="nav-icon">⊞</span> Home
+      </a>
+      <a href="/orders" class="sidebar-nav-item">
+        <span class="nav-icon">📦</span> My Orders
+      </a>
+      <a href="/wishlist" class="sidebar-nav-item">
+        <span class="nav-icon">🤍</span> Wishlist
+      </a>
+      <a href="/cart" class="sidebar-nav-item">
+        <span class="nav-icon">🛒</span> Cart
+      </a>
+      <a href="/recommendations" class="sidebar-nav-item">
+        <span class="nav-icon">✦</span> AI Insights
+      </a>
+      <a href="/admin" class="sidebar-nav-item" style="margin-top:8px; border-top:1px solid rgba(255,255,255,.08); padding-top:12px;">
+        <span class="nav-icon">🔑</span> Admin Panel
+      </a>
+    </nav>
+
+    <button class="sidebar-search-btn" onclick="window.location='/search'">
+      🔍 &nbsp; New Search
+    </button>
+
+    <div class="sidebar-footer">
+      <a href="#" class="sidebar-nav-item">
+        <span class="nav-icon">⚙</span> Settings
+      </a>
+      <a href="/logout" class="sidebar-nav-item">
+        <span class="nav-icon">↪</span> Logout
+      </a>
+    </div>
+  </aside>
+
+  <!-- ======= MAIN ======= -->
+  <div class="app-main">
+
+    <!-- Top Bar -->
+    <header class="app-topbar">
+      <div class="topbar-search">
+        <span class="search-icon">🔍</span>
+        <input type="text" placeholder="Search products, orders, AI help…" id="topbar-search-input">
+      </div>
+      <div class="topbar-nav">
+        <a href="/profile" class="active">Dashboard</a>
+        <a href="#">Analytics</a>
+        <a href="#">Support</a>
+      </div>
+      <div class="topbar-actions">
+        <div class="topbar-icon-btn" title="Notifications">🔔</div>
+        <div class="topbar-icon-btn" title="Settings">⚙</div>
+        <button class="topbar-upgrade">Upgrade</button>
+        <div class="topbar-avatar">{{ user_name[0] | upper }}</div>
+      </div>
+    </header>
+
+    <!-- Dashboard Content -->
+    <main class="app-content">
+
+      <!-- Welcome Row -->
+      <div class="dash-welcome-row">
+        <div class="dash-welcome">
+          <h1>Welcome back, {{ user_name }}!</h1>
+          <p>Your shopping assistant has <strong>{{ ai_suggestions }} new recommendations</strong> for you today.</p>
+        </div>
+        <div class="ai-sync-badge pulse">
+          ✦ AI Sync Active
+        </div>
+      </div>
+
+      <!-- Stats -->
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-card-top">
+            <div class="stat-icon">📦</div>
+            <span class="stat-badge green">+12%</span>
+          </div>
+          <div class="stat-label">Total Orders</div>
+          <div class="stat-value">{{ order_count }}</div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-card-top">
+            <div class="stat-icon">🤍</div>
+            <a href="/wishlist" class="stat-badge blue-light" style="text-decoration:none;">View</a>
+          </div>
+          <div class="stat-label">Wishlist Items</div>
+          <div class="stat-value">{{ wishlist_count }}</div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-card-top">
+            <div class="stat-icon">🛒</div>
+            <a href="/cart" class="stat-badge checkout" style="text-decoration:none;">Checkout</a>
+          </div>
+          <div class="stat-label">Cart Items</div>
+          <div class="stat-value">{{ cart_count }}</div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-card-top">
+            <div class="stat-icon">👁</div>
+          </div>
+          <div class="stat-label">Recently Viewed</div>
+          <div class="stat-value">{{ recently_viewed | length }}</div>
+        </div>
+
+        <div class="stat-card highlight">
+          <div class="stat-card-top">
+            <div class="stat-icon">✦</div>
+            <span class="stat-badge ai">AI READY</span>
+          </div>
+          <div class="stat-label">AI Suggestions</div>
+          <div class="stat-value">{{ ai_suggestions }} <span class="stat-value-sub">New</span></div>
+        </div>
+      </div>
+
+      <!-- Quick Actions -->
+      <div class="quick-actions-label">QUICK ACTIONS</div>
+      <div class="quick-actions-grid">
+        <a href="/products" class="quick-action-btn">
+          <span class="qa-icon">🔎</span>
+          <span>Explore Products</span>
+        </a>
+        <a href="/wishlist" class="quick-action-btn">
+          <span class="qa-icon">📋</span>
+          <span>Manage Wishlist</span>
+        </a>
+        <a href="/recommendations" class="quick-action-btn">
+          <span class="qa-icon">📈</span>
+          <span>AI Insights</span>
+        </a>
+        <a href="#" class="quick-action-btn">
+          <span class="qa-icon">🕒</span>
+          <span>Order History</span>
+        </a>
+        <a href="#" class="quick-action-btn">
+          <span class="qa-icon">👤</span>
+          <span>Account Settings</span>
+        </a>
+      </div>
+
+      <!-- 2-Column Layout -->
+      <div class="dash-two-col">
+
+        <!-- LEFT: Recently Viewed -->
+        <div>
+          <div class="dash-card">
+            <div class="dash-card-header">
+              <h3>Recently Viewed Products</h3>
+              <a href="#">Clear All</a>
+            </div>
+
+            {% if recently_viewed %}
+              {% for product in recently_viewed %}
+              <a href="/product/{{ product.product_id }}" class="recent-product-item" style="color:inherit;">
+                {% if product.image_url %}
+                  <img
+                    class="recent-product-thumb"
+                    src="{{ url_for('static', filename='images/' + product.image_url) }}"
+                    alt="{{ product.product_name }}"
+                    onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
+                  >
+                  <div class="recent-product-thumb" style="display:none; align-items:center; justify-content:center; font-size:22px;">🛍</div>
+                {% else %}
+                  <div class="recent-product-thumb" style="display:flex; align-items:center; justify-content:center; font-size:22px;">🛍</div>
+                {% endif %}
+                <div class="recent-product-info">
+                  <div class="name">{{ product.product_name }}</div>
+                  <div class="price">${{ "%.2f"|format(product.price) }}</div>
+                </div>
+                <span class="recent-product-arrow">›</span>
+              </a>
+              {% endfor %}
+            {% else %}
+              <div style="text-align:center; padding:32px; color:var(--text-muted);">
+                <div style="font-size:36px; margin-bottom:10px;">👁</div>
+                <p>No recently viewed products yet.</p>
+                <a href="/products" class="btn-primary" style="margin-top:14px; display:inline-flex;">Explore Products</a>
+              </div>
+            {% endif %}
+          </div>
+        </div>
+
+        <!-- RIGHT: Searches + Purchases + Pro -->
+        <div>
+          <div class="dash-card">
+            <div class="dash-card-header">
+              <h3>Recent Searches</h3>
+              <span style="font-size:18px; color:var(--text-muted);">🕒</span>
+            </div>
+            <div class="search-tags">
+              {% if recent_searches %}
+                {% for s in recent_searches %}
+                  <a href="/search?q={{ s.search_query }}" class="search-tag">{{ s.search_query }}</a>
+                {% endfor %}
+              {% else %}
+                <span style="font-size:13px; color:var(--text-muted);">No searches yet. Try searching for products!</span>
+              {% endif %}
+            </div>
+          </div>
+
+          <div class="dash-card">
+            <div class="dash-card-header">
+              <h3>Latest Purchases</h3>
+            </div>
+
+            {% if recent_orders %}
+              {% for order in recent_orders %}
+              <div class="purchase-item">
+                <div class="purchase-info">
+                  <div class="purchase-status-icon {{ 'delivered' if order.order_status == 'Delivered' else 'transit' }}">
+                    {{ '✓' if order.order_status == 'Delivered' else '🚚' }}
+                  </div>
+                  <div>
+                    <div class="purchase-name">Order #{{ order.order_id }}</div>
+                    <div class="purchase-status-text">{{ order.order_status }} • {{ order.order_date.strftime('%b %d') if order.order_date else '' }}</div>
+                  </div>
+                </div>
+                <div class="purchase-amount">${{ "%.2f"|format(order.total_amount) }}</div>
+              </div>
+              {% endfor %}
+            {% else %}
+              <div style="text-align:center; padding:20px; color:var(--text-muted); font-size:13px;">
+                No orders yet. <a href="/products" style="color:var(--primary); font-weight:600;">Shop now</a>
+              </div>
+            {% endif %}
+
+            <a href="#" class="btn-view-all">View All Activity</a>
+          </div>
+
+          <div class="pro-banner">
+            <h4>Unlock AI Pro Features</h4>
+            <p>Get advanced market analysis and predictive pricing insights.</p>
+            <a href="#">Learn More &nbsp;→</a>
+          </div>
+        </div>
+
+      </div><!-- /dash-two-col -->
+
+    </main>
+  </div>
+</div>
+
+<script>
+// Enter key on search sends to search
+document.getElementById('topbar-search-input').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter' && this.value.trim()) {
+    window.location = '/search?q=' + encodeURIComponent(this.value.trim());
+  }
+});
+</script>
+
+</body>
+</html>

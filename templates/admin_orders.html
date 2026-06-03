@@ -1,33 +1,558 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Orders</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Order Management — CommerceAI</title>
+  <meta name="description" content="ShopSmart AI admin order management and logistics.">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'Inter',system-ui,sans-serif;background:#F4F6FA;min-height:100vh;display:flex;}
+    /* SIDEBAR */
+    .adm-sidebar{width:192px;flex-shrink:0;background:white;border-right:1px solid #E5E7EB;display:flex;flex-direction:column;height:100vh;position:fixed;left:0;top:0;z-index:50;}
+    .adm-brand{padding:18px 18px 14px;border-bottom:1px solid #F1F5F9;}
+    .adm-brand-row{display:flex;align-items:center;gap:8px;margin-bottom:2px;}
+    .adm-brand-icon{width:28px;height:28px;background:linear-gradient(135deg,#2563EB,#4F46E5);border-radius:7px;display:flex;align-items:center;justify-content:center;color:white;font-size:13px;}
+    .adm-brand-title{font-size:13px;font-weight:900;color:#1E293B;}
+    .adm-brand-sub{font-size:10px;color:#94A3B8;}
+    .adm-nav-wrap{flex:1;padding:12px 10px;display:flex;flex-direction:column;gap:2px;}
+    .adm-nav-item{display:flex;align-items:center;gap:9px;padding:9px 10px;border-radius:8px;font-size:13px;font-weight:500;color:#64748B;text-decoration:none;transition:all .15s;cursor:pointer;border:none;background:none;width:100%;text-align:left;}
+    .adm-nav-item:hover{background:#F8FAFF;color:#1E293B;}
+    .adm-nav-item.active{background:#EFF6FF;color:#2563EB;font-weight:700;}
+    .adm-nav-item .ni{font-size:15px;width:18px;text-align:center;}
+    .new-order-btn{margin:12px 14px;padding:11px;background:linear-gradient(135deg,#7C3AED,#6366F1);color:white;border:none;border-radius:9px;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;justify-content:center;}
+    .adm-bottom{padding:10px;}
+    .adm-nav-bot{display:flex;flex-direction:column;gap:2px;}
+    .adm-user-row{display:flex;align-items:center;gap:9px;padding:10px;border-top:1px solid #F1F5F9;margin-top:8px;}
+    .adm-av{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#2563EB,#4F46E5);display:flex;align-items:center;justify-content:center;color:white;font-size:12px;font-weight:700;flex-shrink:0;}
+    .adm-uname{font-size:12px;font-weight:700;color:#1E293B;}
+    .adm-urole{font-size:10px;color:#94A3B8;}
+    /* MAIN */
+    .adm-main{flex:1;margin-left:192px;display:flex;flex-direction:column;min-height:100vh;}
+    /* TOPBAR */
+    .adm-topbar{background:white;border-bottom:1px solid #E5E7EB;height:54px;padding:0 24px;display:flex;align-items:center;gap:12px;}
+    .adm-tb-search{flex:1;max-width:380px;position:relative;}
+    .adm-tb-search input{width:100%;padding:8px 14px 8px 36px;border:1.5px solid #E5E7EB;border-radius:20px;font-size:13px;background:#F8FAFF;outline:none;}
+    .adm-tb-search .tsi{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:#94A3B8;}
+    .tb-icon{width:32px;height:32px;border-radius:8px;border:1px solid #E5E7EB;background:white;display:flex;align-items:center;justify-content:center;font-size:14px;cursor:pointer;}
+    .tb-user{display:flex;align-items:center;gap:8px;padding:5px 10px;border:1px solid #E5E7EB;border-radius:20px;cursor:pointer;}
+    .tb-user-av{width:26px;height:26px;border-radius:50%;object-fit:cover;background:linear-gradient(135deg,#2563EB,#4F46E5);display:flex;align-items:center;justify-content:center;color:white;font-size:10px;font-weight:700;}
+    .tb-user-info{font-size:12px;font-weight:600;color:#1E293B;}
+    .tb-user-role{font-size:10px;color:#94A3B8;}
+    /* CONTENT */
+    .adm-content{padding:24px;display:grid;grid-template-columns:1fr 264px;gap:20px;align-items:start;}
+    .adm-left{display:flex;flex-direction:column;gap:18px;}
+    /* Page Header */
+    .pg-head{display:flex;align-items:flex-start;justify-content:space-between;}
+    .pg-head h1{font-size:24px;font-weight:900;color:#1E293B;margin-bottom:3px;}
+    .pg-head p{font-size:13px;color:#64748B;}
+    .pg-btns{display:flex;gap:10px;flex-shrink:0;}
+    .btn-outline-sm{padding:8px 16px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:12px;font-weight:600;color:#374151;background:white;cursor:pointer;display:flex;align-items:center;gap:5px;}
+    .btn-primary-sm{padding:8px 16px;background:linear-gradient(135deg,#2563EB,#4F46E5);color:white;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:5px;}
+    /* Alert */
+    .alert-banner{display:flex;align-items:flex-start;gap:14px;padding:14px 18px;border-radius:10px;background:#FFFBEB;border:1px solid #FCD34D;}
+    .ab-icon{font-size:18px;flex-shrink:0;margin-top:1px;}
+    .ab-text{flex:1;}
+    .ab-title{font-size:13px;font-weight:700;color:#92400E;margin-bottom:2px;}
+    .ab-desc{font-size:12px;color:#78350F;line-height:1.5;}
+    .ab-link{color:#D97706;font-weight:700;text-decoration:underline;cursor:pointer;}
+    .ab-view-btn{padding:7px 14px;background:#D97706;color:white;border:none;border-radius:7px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0;}
+    /* KPI Cards */
+    .kpi-row{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;}
+    .kpi-card{background:white;border:1px solid #E5E7EB;border-radius:12px;padding:14px 16px;}
+    .kpi-card.urgent{border-left:3px solid #EF4444;}
+    .kpi-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:#94A3B8;margin-bottom:6px;}
+    .kpi-val{font-size:22px;font-weight:900;color:#1E293B;margin-bottom:4px;}
+    .kpi-growth{font-size:11px;font-weight:600;color:#10B981;}
+    .kpi-badge{display:inline-flex;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;background:#FEF2F2;color:#DC2626;margin-top:3px;}
+    .kpi-sub{font-size:11px;color:#64748B;display:flex;align-items:center;gap:4px;}
+    .kpi-mini-bar{height:4px;background:#E5E7EB;border-radius:10px;margin-top:8px;overflow:hidden;}
+    .kpi-mini-fill{height:100%;background:linear-gradient(90deg,#2563EB,#4F46E5);border-radius:10px;}
+    /* Orders Table */
+    .tbl-card{background:white;border:1px solid #E5E7EB;border-radius:12px;overflow:hidden;}
+    .tbl-header{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid #E5E7EB;}
+    .tbl-header h3{font-size:14px;font-weight:800;color:#1E293B;}
+    .tbl-header-actions{display:flex;gap:8px;}
+    .tbl-icon-btn{width:30px;height:30px;border:1px solid #E5E7EB;border-radius:6px;background:white;display:flex;align-items:center;justify-content:center;font-size:13px;cursor:pointer;}
+    table.ord-tbl{width:100%;border-collapse:collapse;}
+    table.ord-tbl th{padding:10px 14px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:#94A3B8;background:#FAFBFF;border-bottom:1px solid #E5E7EB;}
+    table.ord-tbl th.chk{width:36px;}
+    table.ord-tbl td{padding:13px 14px;font-size:13px;color:#1E293B;border-bottom:1px solid #F1F5F9;vertical-align:middle;}
+    table.ord-tbl tr:last-child td{border-bottom:none;}
+    table.ord-tbl tr:hover td{background:#FAFBFF;}
+    .ord-id{font-weight:800;color:#2563EB;font-size:12px;}
+    .cust-cell{display:flex;flex-direction:column;}
+    .cust-name{font-size:13px;font-weight:700;color:#1E293B;}
+    .cust-email{font-size:11px;color:#94A3B8;}
+    .items-cell{display:flex;gap:4px;}
+    .item-thumb{width:28px;height:28px;border-radius:6px;border:1px solid #E5E7EB;background:#F8FAFF;display:flex;align-items:center;justify-content:center;font-size:12px;overflow:hidden;}
+    .item-thumb img{width:100%;height:100%;object-fit:cover;}
+    .pay-badge{display:inline-flex;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:700;}
+    .pay-badge.paid{background:#DCFCE7;color:#16A34A;}
+    .pay-badge.pending{background:#FFF7ED;color:#C2410C;}
+    .fulfill-badge{display:inline-flex;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:700;}
+    .fulfill-badge.processing{background:#EFF6FF;color:#1D4ED8;}
+    .fulfill-badge.pending{background:#F3F4F6;color:#6B7280;}
+    .fulfill-badge.delivered{background:#DCFCE7;color:#16A34A;}
+    /* Pagination */
+    .tbl-footer{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-top:1px solid #E5E7EB;}
+    .pg-info{font-size:12px;color:#64748B;}
+    .pg-controls{display:flex;align-items:center;gap:5px;}
+    .pg-arrow{width:27px;height:27px;border:1px solid #E5E7EB;border-radius:6px;background:white;display:flex;align-items:center;justify-content:center;font-size:12px;cursor:pointer;color:#64748B;}
+    .pg-num{width:27px;height:27px;border:1px solid #E5E7EB;border-radius:6px;background:white;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;cursor:pointer;color:#64748B;}
+    .pg-num.active{background:#2563EB;color:white;border-color:#2563EB;}
+    .pg-ellipsis{color:#94A3B8;padding:0 2px;font-size:13px;}
+    /* RIGHT PANEL */
+    .adm-right{display:flex;flex-direction:column;gap:16px;}
+    .panel-card{background:white;border:1px solid #E5E7EB;border-radius:12px;padding:18px;}
+    .panel-title{font-size:13px;font-weight:800;color:#1E293B;margin-bottom:12px;display:flex;align-items:center;gap:6px;}
+    /* Logistics bar chart */
+    .logistics-chart{display:flex;align-items:flex-end;gap:5px;height:60px;}
+    .lc-bar{flex:1;border-radius:3px 3px 0 0;background:#BFDBFE;}
+    .lc-bar.current{background:linear-gradient(180deg,#4F46E5,#2563EB);}
+    .lc-labels{display:flex;justify-content:space-around;margin-top:5px;}
+    .lc-label{font-size:9px;color:#94A3B8;}
+    .lc-growth{font-size:11px;font-weight:700;color:#10B981;text-align:right;margin-top:4px;}
+    /* Avg processing */
+    .avg-proc-card{background:#F8FAFF;border-radius:9px;padding:12px;}
+    .apc-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#94A3B8;margin-bottom:5px;}
+    .apc-val{font-size:24px;font-weight:900;color:#1E293B;display:flex;align-items:baseline;gap:6px;}
+    .apc-opt{font-size:12px;font-weight:700;color:#10B981;background:#DCFCE7;padding:2px 7px;border-radius:20px;}
+    .apc-sub{font-size:11px;color:#64748B;margin-top:4px;}
+    /* Category dist */
+    .cat-row{display:flex;align-items:center;gap:8px;margin-bottom:7px;}
+    .cat-name{font-size:12px;color:#374151;width:70px;flex-shrink:0;}
+    .cat-track{flex:1;height:5px;background:#E5E7EB;border-radius:10px;overflow:hidden;}
+    .cat-fill{height:100%;border-radius:10px;}
+    .cat-pct{font-size:11px;font-weight:700;color:#374151;width:28px;text-align:right;}
+    /* Warehouse health */
+    .wh-item{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid #F1F5F9;font-size:12px;}
+    .wh-item:last-child{border-bottom:none;}
+    .wh-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+    .wh-dot.ok{background:#10B981;}
+    .wh-dot.alert{background:#EF4444;}
+    .wh-name{flex:1;font-weight:600;color:#1E293B;}
+    .wh-status{font-size:11px;color:#64748B;}
+    .wh-status.alert-txt{color:#DC2626;font-weight:700;}
+  </style>
 </head>
 <body>
 
-<h1>Orders</h1>
+<!-- SIDEBAR -->
+<aside class="adm-sidebar">
+  <div class="adm-brand">
+    <div class="adm-brand-row">
+      <div class="adm-brand-icon">🛒</div>
+      <div class="adm-brand-title">CommerceAI</div>
+    </div>
+    <div class="adm-brand-sub">Enterprise Logistics</div>
+  </div>
+  <div class="adm-nav-wrap">
+    <a href="/admin" class="adm-nav-item"><span class="ni">⊞</span> Dashboard</a>
+    <a href="/admin/users" class="adm-nav-item"><span class="ni">👥</span> Users</a>
+    <a href="/admin/orders" class="adm-nav-item active"><span class="ni">🧾</span> Orders</a>
+    <a href="/admin/products" class="adm-nav-item"><span class="ni">📦</span> Products</a>
+    <a href="/admin/payments" class="adm-nav-item"><span class="ni">💳</span> Payments</a>
+  </div>
+  <div class="adm-user-row">
+    <div class="adm-av">AR</div>
+    <div>
+      <div class="adm-uname">Alex Rivera</div>
+      <div class="adm-urole">Platform Lead</div>
+    </div>
+    </div>
+  </div>
+</aside>
 
-<table border="1">
+<!-- MAIN -->
+<div class="adm-main">
+  <header class="adm-topbar">
+    <div class="adm-tb-search">
+      <span class="tsi">🔍</span>
+      <input type="text" placeholder="Search orders, customers, tracking IDs…">
+    </div>
+    <div class="tb-icon" style="margin-left:auto;">🔔</div>
+    <div class="tb-icon">⚙</div>
+    <div class="tb-user">
+      <div class="tb-user-av">AR</div>
+      <div>
+        <div class="tb-user-info">Alex Rivera</div>
+        <div class="tb-user-role">Platform Lead</div>
+      </div>
+    </div>
+  </header>
 
-<tr>
-    <th>Order ID</th>
-    <th>User ID</th>
-    <th>Total</th>
-    <th>Status</th>
-</tr>
+  <div class="adm-content">
+    <div class="adm-left">
 
-{% for order in orders %}
+      <!-- Page Header -->
+      <div class="pg-head">
+        <div>
+          <h1>Order Management</h1>
+          <p>Monitor, manage, and optimize your global logistics and fulfillment operations.</p>
+        </div>
+        <div class="pg-btns">
+          <button class="btn-outline-sm">⬇ Export CSV</button>
+          <button class="btn-primary-sm" onclick="openNewOrderModal()">➕ New Order</button>
+        </div>
+      </div>
 
-<tr>
-    <td>{{ order.order_id }}</td>
-    <td>{{ order.user_id }}</td>
-    <td>{{ order.total_amount }}</td>
-    <td>{{ order.order_status }}</td>
-</tr>
+      <!-- Alert -->
+      <div class="alert-banner">
+        <div class="ab-icon">⚠️</div>
+        <div class="ab-text">
+          <div class="ab-title">Critical Logistics Alert</div>
+          <div class="ab-desc">5 Urgent Orders awaiting pickup in Region 4. Potential delay detected due to weather in the Northeastern corridor. <span class="ab-link">Rerouting protocols recommended.</span></div>
+        </div>
+        <button class="ab-view-btn">View Orders</button>
+      </div>
 
-{% endfor %}
+      <!-- KPI Row -->
+      <div class="kpi-row">
+        <div class="kpi-card">
+          <div class="kpi-label">Total Orders</div>
+          <div class="kpi-val">{{ orders | length if orders else '1,240' }}</div>
+          <div class="kpi-growth">↑ +12% growth</div>
+        </div>
+        <div class="kpi-card urgent">
+          <div class="kpi-label">Pending Fulfillment</div>
+          <div class="kpi-val">{{ orders | selectattr('order_status','equalto','Pending') | list | length if orders else 42 }}</div>
+          <div class="kpi-badge">URGENT</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Processing</div>
+          <div class="kpi-val">156</div>
+          <div class="kpi-mini-bar"><div class="kpi-mini-fill" style="width:62%"></div></div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Delivered</div>
+          <div class="kpi-val">982</div>
+          <div class="kpi-sub">✅ 98.4% Rate</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Avg Order Value</div>
+          <div class="kpi-val">$145.50</div>
+          <div class="kpi-sub" style="color:#6366F1;">↗ Target: $150</div>
+        </div>
+      </div>
 
-</table>
+      <!-- Orders Table -->
+      <div class="tbl-card">
+        <div class="tbl-header">
+          <h3>Recent Orders</h3>
+          <div class="tbl-header-actions">
+            <button class="tbl-icon-btn">⚙</button>
+            <button class="tbl-icon-btn">↕</button>
+          </div>
+        </div>
+        <table class="ord-tbl">
+          <thead>
+            <tr>
+              <th class="chk"><input type="checkbox" id="selectAll" onchange="toggleAll(this)"></th>
+              <th>Order ID</th>
+              <th>Customer</th>
+              <th>Items</th>
+              <th>Total</th>
+              <th>Payment</th>
+              <th>Fulfillment</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for order in orders %}
+            <tr>
+              <td><input type="checkbox"></td>
+              <td><span class="ord-id">#ORD-{{ order.order_id }}</span></td>
+              <td>
+                <div class="cust-cell">
+                  <span class="cust-name">User #{{ order.user_id }}</span>
+                  <span class="cust-email">user{{ order.user_id }}@shopsmart.ai</span>
+                </div>
+              </td>
+              <td>
+                <div class="items-cell">
+                  <div class="item-thumb">📦</div>
+                </div>
+              </td>
+              <td><strong>${{ "%.2f"|format(order.total_amount) }}</strong></td>
+              <td><span class="pay-badge {{ 'paid' if order.order_status == 'Completed' else 'pending' }}">{{ 'PAID' if order.order_status == 'Completed' else 'PENDING' }}</span></td>
+              <td>
+                {% set s = order.order_status or 'Pending' %}
+                <span class="fulfill-badge {{ 'delivered' if s == 'Completed' else ('processing' if s == 'Processing' else 'pending') }}">{{ s | upper }}</span>
+              </td>
+            </tr>
+            {% else %}
+            {% for demo in [
+              {'id':'7742','name':'Elena Gilberts','email':'elena.g@example.com','total':429.00,'pay':'paid','status':'processing','icons':['🎧','💻']},
+              {'id':'7741','name':'Marcus Thorne','email':'m.thorne@logistics.net','total':89.50,'pay':'pending','status':'pending','icons':['👟']},
+              {'id':'7740','name':'Sophia Chen','email':'s.chen@techglobal.com','total':1240.00,'pay':'paid','status':'delivered','icons':['🎧','📱']}
+            ] %}
+            <tr>
+              <td><input type="checkbox"></td>
+              <td><span class="ord-id">#ORD-{{ demo.id }}</span></td>
+              <td>
+                <div class="cust-cell">
+                  <span class="cust-name">{{ demo.name }}</span>
+                  <span class="cust-email">{{ demo.email }}</span>
+                </div>
+              </td>
+              <td>
+                <div class="items-cell">
+                  {% for icon in demo.icons %}<div class="item-thumb">{{ icon }}</div>{% endfor %}
+                  {% if demo.icons | length > 2 %}<div class="item-thumb" style="font-size:10px;color:#94A3B8;">+1</div>{% endif %}
+                </div>
+              </td>
+              <td><strong>${{ "%.2f"|format(demo.total) }}</strong></td>
+              <td><span class="pay-badge {{ demo.pay }}">{{ demo.pay | upper }}</span></td>
+              <td><span class="fulfill-badge {{ demo.status }}">{{ demo.status | upper }}</span></td>
+            </tr>
+            {% endfor %}
+            {% endfor %}
+          </tbody>
+        </table>
+        <div class="tbl-footer">
+          <span class="pg-info">Showing 1–10 of {{ orders | length if orders else '1,240' }} orders</span>
+          <div class="pg-controls">
+            <button class="pg-arrow">‹</button>
+            <button class="pg-num active">1</button>
+            <button class="pg-num">2</button>
+            <button class="pg-num">3</button>
+            <span class="pg-ellipsis">…</span>
+            <button class="pg-num">124</button>
+            <button class="pg-arrow">›</button>
+          </div>
+        </div>
+      </div>
 
+    </div><!-- /adm-left -->
+
+    <!-- RIGHT PANEL -->
+    <div class="adm-right">
+      <div class="panel-card">
+        <div class="panel-title">✦ Logistics Intelligence</div>
+        <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:#94A3B8;margin-bottom:8px;">Order Volume (Weekly)</div>
+        <div class="logistics-chart">
+          <div class="lc-bar" style="height:40%"></div>
+          <div class="lc-bar" style="height:55%"></div>
+          <div class="lc-bar" style="height:45%"></div>
+          <div class="lc-bar" style="height:70%"></div>
+          <div class="lc-bar" style="height:80%"></div>
+          <div class="lc-bar" style="height:60%"></div>
+          <div class="lc-bar current" style="height:100%"></div>
+        </div>
+        <div class="lc-labels">
+          <span class="lc-label">M</span><span class="lc-label">T</span><span class="lc-label">W</span>
+          <span class="lc-label">T</span><span class="lc-label">F</span><span class="lc-label">S</span><span class="lc-label">S</span>
+        </div>
+        <div class="lc-growth">↑ +18% vs LW</div>
+      </div>
+
+      <div class="panel-card">
+        <div class="avg-proc-card">
+          <div class="apc-label">Avg. Processing Time</div>
+          <div class="apc-val">4.2h <span class="apc-opt">Optimal</span></div>
+          <div class="apc-sub">AI identified 12% reduction potential in Warehouse B.</div>
+        </div>
+      </div>
+
+      <div class="panel-card">
+        <div class="panel-title">📊 Category Distribution</div>
+        {% for cat in [('Electronics','#2563EB',62),('Fashion','#7C3AED',28),('Home & Living','#10B981',10)] %}
+        <div class="cat-row">
+          <span class="cat-name">{{ cat[0] }}</span>
+          <div class="cat-track"><div class="cat-fill" style="width:{{ cat[2] }}%;background:{{ cat[1] }};"></div></div>
+          <span class="cat-pct">{{ cat[2] }}%</span>
+        </div>
+        {% endfor %}
+      </div>
+
+      <div class="panel-card">
+        <div class="panel-title">🏭 Warehouse Health</div>
+        {% for wh in [('NJ-Warehouse-01','06% Capacity','ok'),('CA-Logistics-Hub','42% Capacity','ok'),('TX-Distribution','Alert','alert')] %}
+        <div class="wh-item">
+          <div class="wh-dot {{ wh[2] }}"></div>
+          <div class="wh-name">{{ wh[0] }}</div>
+          <div class="wh-status {{ 'alert-txt' if wh[2]=='alert' else '' }}">{{ wh[1] }}</div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ── NEW ORDER MODAL ── -->
+<style>
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(15,23,42,.55);z-index:300;align-items:center;justify-content:center;backdrop-filter:blur(3px);}
+.modal-overlay.open{display:flex;}
+.modal-box{background:white;border-radius:16px;padding:30px;width:480px;max-width:95vw;box-shadow:0 24px 64px rgba(0,0,0,.22);animation:modalIn .2s ease;}
+@keyframes modalIn{from{opacity:0;transform:scale(.96);}to{opacity:1;transform:scale(1);}}
+.modal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;}
+.modal-title{font-size:18px;font-weight:900;color:#1E293B;}
+.modal-close{width:30px;height:30px;border:1px solid #E5E7EB;border-radius:6px;background:white;font-size:16px;cursor:pointer;color:#64748B;display:flex;align-items:center;justify-content:center;}
+.modal-sub{font-size:12px;color:#94A3B8;margin-bottom:22px;}
+.form-group{margin-bottom:16px;}
+.form-group label{display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#374151;margin-bottom:6px;}
+.form-group select,.form-group input{width:100%;padding:10px 12px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:13px;outline:none;background:white;color:#1E293B;}
+.form-group select:focus,.form-group input:focus{border-color:#2563EB;}
+.form-row-2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.order-summary{background:#F8FAFF;border:1px solid #DBEAFE;border-radius:10px;padding:14px 16px;margin-bottom:18px;display:none;}
+.os-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#94A3B8;margin-bottom:6px;}
+.os-row{display:flex;justify-content:space-between;align-items:center;font-size:13px;margin-bottom:4px;}
+.os-row strong{font-weight:900;color:#1E293B;}
+.os-total{border-top:1px solid #BFDBFE;margin-top:8px;padding-top:8px;font-size:15px;font-weight:900;color:#2563EB;}
+.modal-btns{display:flex;gap:10px;}
+.modal-cancel-btn{flex:1;padding:11px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:13px;font-weight:600;color:#374151;background:white;cursor:pointer;}
+.modal-submit-btn{flex:2;padding:11px;background:linear-gradient(135deg,#2563EB,#4F46E5);color:white;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;}
+.modal-submit-btn:disabled{opacity:.6;cursor:not-allowed;}
+.toast-bar{position:fixed;bottom:24px;right:24px;padding:13px 22px;border-radius:10px;font-size:13px;font-weight:600;z-index:400;opacity:0;transform:translateY(8px);transition:all .3s;pointer-events:none;}
+.toast-bar.show{opacity:1;transform:translateY(0);}
+.toast-bar.success{background:#1E293B;color:white;}
+.toast-bar.error{background:#DC2626;color:white;}
+</style>
+
+<div class="modal-overlay" id="newOrderModal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <div class="modal-title">➕ Create New Order</div>
+      <button class="modal-close" onclick="closeNewOrderModal()">✕</button>
+    </div>
+    <div class="modal-sub">Place a manual order on behalf of a customer. Stock will be updated automatically.</div>
+
+    <div class="form-group">
+      <label>Customer *</label>
+      <select id="no-user" onchange="updateSummary()">
+        <option value="">— Select a customer —</option>
+        {% for u in users_list %}
+        <option value="{{ u.user_id }}">{{ u.first_name }} {{ u.last_name }} ({{ u.email }})</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label>Product *</label>
+      <select id="no-product" onchange="updateSummary()">
+        <option value="">— Select a product —</option>
+        {% for p in products_list %}
+        <option value="{{ p.product_id }}" data-price="{{ p.price }}" data-stock="{{ p.stock }}">{{ p.product_name }} — ${{ '%.2f'|format(p.price) }} ({{ p.stock }} in stock)</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="form-row-2">
+      <div class="form-group">
+        <label>Quantity *</label>
+        <input type="number" id="no-qty" value="1" min="1" oninput="updateSummary()">
+      </div>
+      <div class="form-group">
+        <label>Payment Method</label>
+        <select id="no-payment">
+          <option value="Cash On Delivery">Cash On Delivery</option>
+          <option value="Credit Card">Credit Card</option>
+          <option value="Debit Card">Debit Card</option>
+          <option value="UPI">UPI</option>
+          <option value="Bank Transfer">Bank Transfer</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="order-summary" id="orderSummary">
+      <div class="os-label">Order Summary</div>
+      <div class="os-row"><span>Product</span><strong id="os-product">—</strong></div>
+      <div class="os-row"><span>Unit Price</span><strong id="os-price">—</strong></div>
+      <div class="os-row"><span>Quantity</span><strong id="os-qty">—</strong></div>
+      <div class="os-row os-total"><span>Total Amount</span><strong id="os-total">—</strong></div>
+    </div>
+
+    <div class="modal-btns">
+      <button class="modal-cancel-btn" onclick="closeNewOrderModal()">Cancel</button>
+      <button class="modal-submit-btn" id="no-submit-btn" onclick="submitNewOrder()">✓ Place Order</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast-bar" id="toastBar"></div>
+
+<script>
+function toggleAll(cb) {
+  document.querySelectorAll('.ord-tbl tbody input[type="checkbox"]').forEach(c => c.checked = cb.checked);
+}
+
+function openNewOrderModal() {
+  document.getElementById('newOrderModal').classList.add('open');
+}
+function closeNewOrderModal() {
+  document.getElementById('newOrderModal').classList.remove('open');
+}
+document.getElementById('newOrderModal').addEventListener('click', function(e){
+  if (e.target === this) closeNewOrderModal();
+});
+
+function updateSummary() {
+  const prodSel = document.getElementById('no-product');
+  const qty     = parseInt(document.getElementById('no-qty').value) || 0;
+  const opt     = prodSel.options[prodSel.selectedIndex];
+  const summary = document.getElementById('orderSummary');
+
+  if (!prodSel.value || qty < 1) { summary.style.display='none'; return; }
+
+  const price = parseFloat(opt.dataset.price);
+  const stock = parseInt(opt.dataset.stock);
+  const name  = opt.text.split(' — ')[0];
+  const total = price * qty;
+
+  document.getElementById('os-product').textContent = name;
+  document.getElementById('os-price').textContent   = '$' + price.toFixed(2);
+  document.getElementById('os-qty').textContent      = qty + (qty > stock ? ' ⚠ Exceeds stock!' : '');
+  document.getElementById('os-total').textContent   = '$' + total.toFixed(2);
+  summary.style.display = 'block';
+}
+
+function submitNewOrder() {
+  const userId    = document.getElementById('no-user').value;
+  const productId = document.getElementById('no-product').value;
+  const qty       = parseInt(document.getElementById('no-qty').value);
+  const payment   = document.getElementById('no-payment').value;
+
+  if (!userId)    { showToast('⚠ Please select a customer', 'error'); return; }
+  if (!productId) { showToast('⚠ Please select a product',  'error'); return; }
+  if (!qty || qty < 1) { showToast('⚠ Quantity must be at least 1', 'error'); return; }
+
+  const btn = document.getElementById('no-submit-btn');
+  btn.disabled = true;
+  btn.innerHTML = '⏳ Placing...';
+
+  fetch('/admin/orders/new', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ user_id: userId, product_id: productId, quantity: qty, payment_method: payment })
+  })
+  .then(r => r.json())
+  .then(data => {
+    btn.disabled = false;
+    btn.innerHTML = '✓ Place Order';
+    if (data.success) {
+      showToast('✅ ' + data.message, 'success');
+      closeNewOrderModal();
+      setTimeout(() => location.reload(), 1200);
+    } else {
+      showToast('❌ ' + (data.error || 'Failed to create order'), 'error');
+    }
+  })
+  .catch(() => {
+    btn.disabled = false;
+    btn.innerHTML = '✓ Place Order';
+    showToast('❌ Network error — please try again', 'error');
+  });
+}
+
+function showToast(msg, type) {
+  const t = document.getElementById('toastBar');
+  t.textContent = msg;
+  t.className = 'toast-bar ' + type + ' show';
+  clearTimeout(window._tb);
+  window._tb = setTimeout(() => t.classList.remove('show'), 3500);
+}
+</script>
 </body>
 </html>

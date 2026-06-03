@@ -1,33 +1,389 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Manage Products</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Product Catalog — ShopSmart AI Admin</title>
+  <meta name="description" content="ShopSmart AI admin product catalog management.">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'Inter',system-ui,sans-serif;background:#F4F6FA;min-height:100vh;display:flex;}
+    /* SIDEBAR */
+    .adm-sidebar{width:192px;flex-shrink:0;background:white;border-right:1px solid #E5E7EB;display:flex;flex-direction:column;height:100vh;position:fixed;left:0;top:0;z-index:50;}
+    .adm-brand{padding:20px 18px 14px;border-bottom:1px solid #F1F5F9;}
+    .adm-brand-icon{width:32px;height:32px;background:linear-gradient(135deg,#2563EB,#4F46E5);border-radius:8px;display:flex;align-items:center;justify-content:center;color:white;font-size:14px;margin-bottom:6px;}
+    .adm-brand-title{font-size:13px;font-weight:900;color:#1E293B;}
+    .adm-brand-sub{font-size:10px;color:#94A3B8;}
+    .adm-nav-wrap{flex:1;padding:12px 10px;display:flex;flex-direction:column;gap:2px;}
+    .adm-nav-item{display:flex;align-items:center;gap:9px;padding:9px 10px;border-radius:8px;font-size:13px;font-weight:500;color:#64748B;text-decoration:none;transition:all .18s;cursor:pointer;border:none;background:none;width:100%;text-align:left;}
+    .adm-nav-item:hover{background:#F8FAFF;color:#1E293B;}
+    .adm-nav-item.active{background:#EFF6FF;color:#2563EB;font-weight:700;}
+    .adm-nav-item .ni{font-size:15px;width:18px;text-align:center;}
+    .adm-divider{height:1px;background:#F1F5F9;margin:10px 0;}
+    .adm-support-btn{margin:10px 14px;padding:10px;background:linear-gradient(135deg,#7C3AED,#6366F1);color:white;border:none;border-radius:9px;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;justify-content:center;}
+    .adm-bottom{padding:10px;}
+    .adm-user-row{display:flex;align-items:center;gap:9px;padding:10px;border-top:1px solid #F1F5F9;}
+    .adm-av{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#2563EB,#4F46E5);display:flex;align-items:center;justify-content:center;color:white;font-size:12px;font-weight:700;flex-shrink:0;}
+    .adm-uname{font-size:12px;font-weight:700;color:#1E293B;}
+    .adm-urole{font-size:10px;color:#94A3B8;}
+    /* MAIN */
+    .adm-main{flex:1;margin-left:192px;display:flex;flex-direction:column;min-height:100vh;}
+    /* TOPBAR */
+    .adm-topbar{background:white;border-bottom:1px solid #E5E7EB;height:54px;padding:0 24px;display:flex;align-items:center;gap:14px;}
+    .adm-tb-search{flex:1;max-width:380px;position:relative;}
+    .adm-tb-search input{width:100%;padding:8px 14px 8px 36px;border:1.5px solid #E5E7EB;border-radius:20px;font-size:13px;background:#F8FAFF;outline:none;}
+    .adm-tb-search .tsi{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:#94A3B8;}
+    .tb-icon{width:32px;height:32px;border-radius:8px;border:1px solid #E5E7EB;background:white;display:flex;align-items:center;justify-content:center;font-size:14px;cursor:pointer;}
+    .tb-user{display:flex;align-items:center;gap:8px;padding:5px 10px;border:1px solid #E5E7EB;border-radius:20px;cursor:pointer;}
+    .tb-user-av{width:26px;height:26px;border-radius:50%;background:linear-gradient(135deg,#2563EB,#4F46E5);display:flex;align-items:center;justify-content:center;color:white;font-size:10px;font-weight:700;}
+    .tb-user-info{font-size:12px;font-weight:600;color:#1E293B;}
+    .tb-user-role{font-size:10px;color:#94A3B8;}
+    /* CONTENT */
+    .adm-content{padding:24px;display:grid;grid-template-columns:1fr 264px;gap:20px;align-items:start;}
+    .adm-left{display:flex;flex-direction:column;gap:18px;}
+    /* Page Header */
+    .pg-head{display:flex;align-items:flex-start;justify-content:space-between;}
+    .pg-head h1{font-size:24px;font-weight:900;color:#1E293B;margin-bottom:3px;}
+    .pg-head p{font-size:13px;color:#64748B;}
+    .pg-btns{display:flex;gap:10px;flex-shrink:0;}
+    .btn-outline-sm{padding:8px 16px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:12px;font-weight:600;color:#374151;background:white;cursor:pointer;display:flex;align-items:center;gap:5px;}
+    .btn-primary-sm{padding:8px 16px;background:linear-gradient(135deg,#2563EB,#4F46E5);color:white;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:5px;}
+    /* Stat Cards */
+    .stat-row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;}
+    .stat-card{background:white;border:1px solid #E5E7EB;border-radius:12px;padding:16px 18px;}
+    .sc-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:#94A3B8;margin-bottom:6px;display:flex;align-items:center;justify-content:space-between;}
+    .sc-val{font-size:22px;font-weight:900;color:#1E293B;margin-bottom:4px;}
+    .sc-badge{font-size:10px;font-weight:700;padding:2px 7px;border-radius:20px;}
+    .sc-badge.green{background:#DCFCE7;color:#16A34A;}
+    .sc-badge.red{background:#FEF2F2;color:#DC2626;}
+    .sc-badge.orange{background:#FFF7ED;color:#C2410C;}
+    .sc-sub{font-size:11px;color:#64748B;margin-top:3px;}
+    /* Alert Banner */
+    .alert-banner{display:flex;align-items:center;gap:14px;padding:14px 18px;border-radius:10px;background:#FEF2F2;border:1px solid #FECACA;}
+    .ab-icon{font-size:20px;flex-shrink:0;}
+    .ab-text{flex:1;}
+    .ab-title{font-size:13px;font-weight:700;color:#DC2626;margin-bottom:2px;}
+    .ab-desc{font-size:12px;color:#991B1B;}
+    .ab-desc a{color:#DC2626;font-weight:700;text-decoration:underline;cursor:pointer;}
+    .ab-btn{padding:8px 16px;background:#DC2626;color:white;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;}
+    /* Table Card */
+    .tbl-card{background:white;border:1px solid #E5E7EB;border-radius:12px;overflow:hidden;}
+    .tbl-tabs{display:flex;align-items:center;gap:0;padding:0 18px;border-bottom:1px solid #E5E7EB;}
+    .tbl-tab{padding:13px 14px;font-size:13px;font-weight:600;color:#94A3B8;cursor:pointer;border-bottom:2px solid transparent;background:none;border-top:none;border-left:none;border-right:none;transition:.15s;}
+    .tbl-tab.active{color:#2563EB;border-bottom-color:#2563EB;}
+    .tbl-tab-actions{margin-left:auto;display:flex;gap:8px;}
+    .tbl-icon-btn{width:30px;height:30px;border:1px solid #E5E7EB;border-radius:6px;background:white;display:flex;align-items:center;justify-content:center;font-size:13px;cursor:pointer;}
+    table.prod-tbl{width:100%;border-collapse:collapse;}
+    table.prod-tbl th{padding:10px 16px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:#94A3B8;background:#FAFBFF;border-bottom:1px solid #E5E7EB;}
+    table.prod-tbl td{padding:13px 16px;font-size:13px;color:#1E293B;border-bottom:1px solid #F1F5F9;vertical-align:middle;}
+    table.prod-tbl tr:last-child td{border-bottom:none;}
+    table.prod-tbl tr:hover td{background:#FAFBFF;}
+    .prod-cell{display:flex;align-items:center;gap:11px;}
+    .prod-thumb{width:44px;height:54px;border-radius:8px;border:1px solid #E5E7EB;background:#F8FAFF;overflow:hidden;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:18px;}
+    .prod-thumb img{width:100%;height:100%;object-fit:cover;}
+    .prod-name{font-size:13px;font-weight:700;color:#1E293B;margin-bottom:2px;}
+    .prod-variant{font-size:11px;color:#94A3B8;}
+    .cat-badge{display:inline-flex;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:600;}
+    .cat-badge.electronics{background:#EFF6FF;color:#1D4ED8;}
+    .cat-badge.fashion{background:#FDF4FF;color:#9333EA;}
+    .cat-badge.home{background:#ECFDF5;color:#059669;}
+    .sku-text{font-family:monospace;font-size:12px;color:#64748B;}
+    .stock-cell{display:flex;flex-direction:column;gap:4px;}
+    .stock-bar-wrap{display:flex;align-items:center;gap:8px;}
+    .stock-bar-track{width:60px;height:5px;background:#E5E7EB;border-radius:10px;overflow:hidden;flex-shrink:0;}
+    .stock-bar-fill{height:100%;border-radius:10px;}
+    .stock-bar-fill.high{background:#2563EB;}
+    .stock-bar-fill.medium{background:#F59E0B;}
+    .stock-bar-fill.low{background:#EF4444;}
+    .stock-count{font-size:12px;font-weight:600;}
+    .stock-count.ok{color:#374151;}
+    .stock-count.low{color:#DC2626;font-weight:700;}
+    .velocity-badge{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:700;}
+    .velocity-badge.high{color:#16A34A;}
+    .velocity-badge.stable{color:#2563EB;}
+    .velocity-badge.very-high{color:#7C3AED;}
+    /* Pagination */
+    .tbl-footer{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-top:1px solid #E5E7EB;}
+    .pg-info{font-size:12px;color:#64748B;}
+    .pg-controls{display:flex;align-items:center;gap:6px;}
+    .pg-arrow{width:28px;height:28px;border:1px solid #E5E7EB;border-radius:6px;background:white;display:flex;align-items:center;justify-content:center;font-size:12px;cursor:pointer;color:#64748B;}
+    .pg-num{width:28px;height:28px;border:1px solid #E5E7EB;border-radius:6px;background:white;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;cursor:pointer;color:#64748B;}
+    .pg-num.active{background:#2563EB;color:white;border-color:#2563EB;}
+    /* RIGHT PANEL */
+    .adm-right{display:flex;flex-direction:column;gap:16px;}
+    .panel-card{background:white;border:1px solid #E5E7EB;border-radius:12px;padding:18px;}
+    .panel-title{font-size:13px;font-weight:800;color:#1E293B;margin-bottom:12px;display:flex;align-items:center;gap:6px;}
+    .ai-insight{background:#EFF6FF;border:1px solid #DBEAFE;border-radius:9px;padding:12px;margin-bottom:10px;}
+    .ai-insight-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#2563EB;margin-bottom:4px;}
+    .ai-insight-text{font-size:12px;color:#374151;line-height:1.5;}
+    .ai-insight-text strong{color:#1E293B;}
+    .ai-insight.purple{background:#F5F3FF;border-color:#DDD6FE;}
+    .ai-insight.purple .ai-insight-label{color:#7C3AED;}
+    /* Mini Bar Chart */
+    .mini-bar-chart{display:flex;align-items:flex-end;gap:5px;height:60px;margin-top:8px;}
+    .mbc-bar{flex:1;border-radius:3px 3px 0 0;background:#BFDBFE;}
+    .mbc-bar.current{background:linear-gradient(180deg,#4F46E5,#2563EB);}
+    .mbc-labels{display:flex;justify-content:space-between;margin-top:5px;}
+    .mbc-label{font-size:9px;color:#94A3B8;}
+    /* Category Mix */
+    .cat-mix-row{display:flex;align-items:center;gap:10px;margin-bottom:8px;}
+    .cat-mix-label{font-size:12px;color:#374151;width:80px;flex-shrink:0;}
+    .cat-mix-pct{font-size:12px;font-weight:700;color:#1E293B;margin-left:auto;width:32px;text-align:right;}
+    .cat-mix-track{flex:1;height:5px;background:#E5E7EB;border-radius:10px;overflow:hidden;}
+    .cat-mix-fill{height:100%;border-radius:10px;}
+  </style>
 </head>
 <body>
 
-<h1>Manage Products</h1>
+<!-- SIDEBAR -->
+<aside class="adm-sidebar">
+  <div class="adm-brand">
+    <div class="adm-brand-icon">🛒</div>
+    <div class="adm-brand-title">ShopSmart AI</div>
+    <div class="adm-brand-sub">Enterprise Admin</div>
+  </div>
+  <div class="adm-nav-wrap">
+    <a href="/admin"          class="adm-nav-item"><span class="ni">⊞</span> Dashboard</a>
+    <a href="/admin/products" class="adm-nav-item active"><span class="ni">📦</span> Products</a>
+  </div>
+  <div class="adm-user-row">
+    <div class="adm-av">SA</div>
+    <div>
+      <div class="adm-uname">Super Admin</div>
+      <div class="adm-urole">ShopSmart AI</div>
+    </div>
+  </div>
+</aside>
 
-<table border="1">
+<!-- MAIN -->
+<div class="adm-main">
+  <header class="adm-topbar">
+    <div class="adm-tb-search">
+      <span class="tsi">🔍</span>
+      <input type="text" placeholder="Search products, SKUs, or categories…">
+    </div>
+    <div class="tb-icon" style="margin-left:auto;">🔔</div>
+    <div class="tb-icon">❓</div>
+    <div class="tb-icon">🌙</div>
+    <div class="tb-user">
+      <div class="tb-user-av">AR</div>
+      <div>
+        <div class="tb-user-info">Alex Rivera</div>
+        <div class="tb-user-role">Head Administrator</div>
+      </div>
+    </div>
+  </header>
 
-<tr>
-    <th>ID</th>
-    <th>Name</th>
-    <th>Price</th>
-    <th>Stock</th>
-</tr>
+  <div class="adm-content">
+    <div class="adm-left">
 
-{% for product in products %}
+      <!-- Page Header -->
+      <div class="pg-head">
+        <div>
+          <h1>Product Catalog</h1>
+          <p>Manage your inventory ecosystem with real-time AI insights.</p>
+        </div>
+        <div class="pg-btns">
+          <button class="btn-outline-sm">⬇ Export CSV</button>
+          <button class="btn-primary-sm">➕ Add New Product</button>
+        </div>
+      </div>
 
-<tr>
-    <td>{{ product.product_id }}</td>
-    <td>{{ product.product_name }}</td>
-    <td>{{ product.price }}</td>
-    <td>{{ product.stock }}</td>
-</tr>
+      <!-- Stat Cards -->
+      <div class="stat-row">
+        <div class="stat-card">
+          <div class="sc-label">Total Products <span class="sc-badge green">↑ +5.2%</span></div>
+          <div class="sc-val">{{ products | length if products else '12,482' }}</div>
+        </div>
+        <div class="stat-card">
+          <div class="sc-label">Active Products ✅</div>
+          <div class="sc-val">{{ products | selectattr('stock','gt',0) | list | length if products else '11,840' }}</div>
+        </div>
+        <div class="stat-card">
+          <div class="sc-label">Low Stock Alerts <span class="sc-badge orange">Action Required</span></div>
+          <div class="sc-val">{{ products | selectattr('stock','le',10) | list | length if products else 42 }}</div>
+        </div>
+        <div class="stat-card">
+          <div class="sc-label">Best Seller ⭐</div>
+          <div class="sc-sub" style="font-size:14px;font-weight:800;color:#1E293B;margin-bottom:3px;">
+            {% if products %}{{ products[0].product_name | truncate(20) }}{% else %}Titanium Pro Watch{% endif %}
+          </div>
+          <div class="sc-sub">842 units this week</div>
+        </div>
+      </div>
 
-{% endfor %}
+      <!-- Alert Banner -->
+      <div class="alert-banner">
+        <div class="ab-icon">⚠️</div>
+        <div class="ab-text">
+          <div class="ab-title">Critical Inventory Alert</div>
+          <div class="ab-desc">4 high-priority items are projected to stock out within 48 hours. <a href="#">Review restock orders.</a></div>
+        </div>
+        <button class="ab-btn">View Items</button>
+      </div>
 
-</table>
+      <!-- Product Table -->
+      <div class="tbl-card">
+        <div class="tbl-tabs">
+          <button class="tbl-tab active">All Products</button>
+          <button class="tbl-tab">Low Stock</button>
+          <button class="tbl-tab">Drafts</button>
+          <div class="tbl-tab-actions">
+            <button class="tbl-icon-btn">⚙</button>
+            <button class="tbl-icon-btn">↕</button>
+          </div>
+        </div>
+        <table class="prod-tbl">
+          <thead>
+            <tr>
+              <th>Product</th>
+              <th>Category</th>
+              <th>SKU</th>
+              <th>Price</th>
+              <th>Stock Status</th>
+              <th>AI Velocity</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for product in products %}
+            {% set cat = product.category_name | lower if product.category_name else 'electronics' %}
+            {% set stock = product.stock %}
+            <tr>
+              <td>
+                <div class="prod-cell">
+                  <div class="prod-thumb">
+                    {% if product.image_url %}<img src="{{ url_for('static', filename='images/' + product.image_url) }}" alt="" onerror="this.style.display='none';this.parentElement.innerHTML='📦';">{% else %}📦{% endif %}
+                  </div>
+                  <div>
+                    <div class="prod-name">{{ product.product_name }}</div>
+                    <div class="prod-variant">ID #{{ product.product_id }}</div>
+                  </div>
+                </div>
+              </td>
+              <td><span class="cat-badge {{ 'electronics' if 'electr' in (product.category_name or '') | lower else ('fashion' if 'fashion' in (product.category_name or '') | lower else 'home') }}">{{ product.category_name or 'Electronics' }}</span></td>
+              <td><span class="sku-text">PRD-{{ "%04d"|format(product.product_id) }}-X</span></td>
+              <td><strong>${{ "%.2f"|format(product.price) }}</strong></td>
+              <td>
+                <div class="stock-cell">
+                  <div class="stock-bar-wrap">
+                    <div class="stock-bar-track">
+                      <div class="stock-bar-fill {{ 'low' if stock <= 10 else ('medium' if stock <= 20 else 'high') }}" style="width:{{ [stock * 100 // 50, 100] | min }}%"></div>
+                    </div>
+                    <span class="stock-count {{ 'low' if stock <= 10 else 'ok' }}">{{ 'Low: ' if stock <= 10 else '' }}{{ stock }} left</span>
+                  </div>
+                </div>
+              </td>
+              <td>
+                <span class="velocity-badge {{ 'very-high' if stock > 20 else ('high' if stock > 10 else 'stable') }}">
+                  {{ '↑ Very High' if stock > 20 else ('↑ High' if stock > 10 else '⊞ Stable') }}
+                </span>
+              </td>
+            </tr>
+            {% else %}
+            {% for demo in [
+              {'name':'Titanium Pro Watch','variant':'Version 4.2 Grey','cat':'Electronics','sku':'#TH-7702-X','price':299.00,'stock':182,'pct':90,'vel':'high'},
+              {'name':'CloudRunner Knit','variant':'Scarlet Red / Size 10','cat':'Fashion','sku':'FSH-0012-R','price':145.00,'stock':12,'pct':10,'vel':'stable'},
+              {'name':'Aura Sound ANC','variant':'Midnight Black','cat':'Electronics','sku':'AUD-4421-B','price':349.99,'stock':540,'pct':95,'vel':'very-high'}
+            ] %}
+            <tr>
+              <td>
+                <div class="prod-cell">
+                  <div class="prod-thumb">{{ '⌚' if loop.index==1 else ('👟' if loop.index==2 else '🎧') }}</div>
+                  <div>
+                    <div class="prod-name">{{ demo.name }}</div>
+                    <div class="prod-variant">{{ demo.variant }}</div>
+                  </div>
+                </div>
+              </td>
+              <td><span class="cat-badge {{ 'electronics' if demo.cat=='Electronics' else 'fashion' }}">{{ demo.cat }}</span></td>
+              <td><span class="sku-text">{{ demo.sku }}</span></td>
+              <td><strong>${{ "%.2f"|format(demo.price) }}</strong></td>
+              <td>
+                <div class="stock-cell">
+                  <div class="stock-bar-wrap">
+                    <div class="stock-bar-track">
+                      <div class="stock-bar-fill {{ demo.vel }}" style="width:{{ demo.pct }}%"></div>
+                    </div>
+                    <span class="stock-count {{ 'low' if demo.vel=='stable' else 'ok' }}">{{ 'Low: ' if demo.vel=='stable' else '' }}{{ demo.stock }} left</span>
+                  </div>
+                </div>
+              </td>
+              <td>
+                <span class="velocity-badge {{ demo.vel }}">{{ '↑ Very High' if demo.vel=='very-high' else ('↑ High' if demo.vel=='high' else '⊞ Stable') }}</span>
+              </td>
+            </tr>
+            {% endfor %}
+            {% endfor %}
+          </tbody>
+        </table>
+        <div class="tbl-footer">
+          <span class="pg-info">Showing 1–{{ [products|length, 10]|min if products else 10 }} of {{ products|length if products else '12,482' }} products</span>
+          <div class="pg-controls">
+            <button class="pg-arrow">‹</button>
+            <button class="pg-num active">1</button>
+            <button class="pg-num">2</button>
+            <button class="pg-num">3</button>
+            <button class="pg-arrow">›</button>
+          </div>
+        </div>
+      </div>
 
+    </div><!-- /adm-left -->
+
+    <!-- RIGHT PANEL -->
+    <div class="adm-right">
+      <div class="panel-card">
+        <div class="panel-title">✦ AI Intelligence</div>
+        <div class="ai-insight">
+          <div class="ai-insight-label">Stock Optimization</div>
+          <div class="ai-insight-text">Based on current sales velocity, increase stock for <strong>Electronics</strong> by 15% before next Tuesday.</div>
+        </div>
+        <div class="ai-insight purple">
+          <div class="ai-insight-label">Pricing Alert</div>
+          <div class="ai-insight-text">Competitors lowered prices for <strong>Aura Sound ANC</strong>. Consider a -5% temporary discount.</div>
+        </div>
+      </div>
+
+      <div class="panel-card">
+        <div class="panel-title">📈 Sales Velocity</div>
+        <div class="mini-bar-chart">
+          <div class="mbc-bar" style="height:40%"></div>
+          <div class="mbc-bar" style="height:55%"></div>
+          <div class="mbc-bar" style="height:45%"></div>
+          <div class="mbc-bar" style="height:70%"></div>
+          <div class="mbc-bar current" style="height:100%"></div>
+        </div>
+        <div class="mbc-labels">
+          <span class="mbc-label">MON</span>
+          <span class="mbc-label">WED</span>
+          <span class="mbc-label">FRI</span>
+          <span class="mbc-label">SUN (Forecast)</span>
+        </div>
+      </div>
+
+      <div class="panel-card">
+        <div class="panel-title">📊 Category Mix</div>
+        {% for cat_item in [('Electronics','#2563EB',42),('Fashion','#7C3AED',28),('Home & Living','#10B981',18),('Others','#94A3B8',12)] %}
+        <div class="cat-mix-row">
+          <span class="cat-mix-label">{{ cat_item[0] }}</span>
+          <div class="cat-mix-track"><div class="cat-mix-fill" style="width:{{ cat_item[2] }}%;background:{{ cat_item[1] }};"></div></div>
+          <span class="cat-mix-pct">{{ cat_item[2] }}%</span>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+document.querySelectorAll('.tbl-tab').forEach(t => {
+  t.addEventListener('click', function() {
+    document.querySelectorAll('.tbl-tab').forEach(x => x.classList.remove('active'));
+    this.classList.add('active');
+  });
+});
+</script>
 </body>
 </html>

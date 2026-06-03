@@ -1,41 +1,227 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>My Cart</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Your Cart — ShopSmart AI</title>
+  <meta name="description" content="Review your cart and checkout securely with AI-powered savings on ShopSmart AI.">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='extra2.css') }}">
 </head>
-<body>
+<body class="cart-body">
 
-<h1>My Shopping Cart</h1>
+<!-- NAVBAR -->
+<nav class="sf-navbar">
+  <a href="/" class="sf-brand">
+    <div class="sf-brand-icon">🛒</div> ShopSmart AI
+  </a>
+  <div class="sf-search" style="max-width:440px;">
+    <span class="si">🔍</span>
+    <form action="/search" method="GET">
+      <input type="text" name="q" placeholder="Search your cart or store…">
+    </form>
+  </div>
+  <div class="sf-actions">
+    <a href="/wishlist" class="sf-action-link"><span class="icon">🤍</span>Wishlist</a>
+    <a href="#" class="sf-action-link"><span class="icon">🔔</span>Alerts</a>
+    <a href="/cart" class="sf-cart-btn" style="position:relative;">
+      🛒 Cart <span class="sf-cart-badge">{{ cart_items | length }}</span>
+    </a>
+    <a href="/profile" class="sf-action-link" style="flex-direction:row; gap:6px;">
+      <div class="sf-user-btn">{{ user_name[0] | upper if user_name else 'U' }}</div>
+      <span style="font-size:13px; font-weight:600; color:var(--text-primary);">{{ user_name }}</span>
+    </a>
+  </div>
+</nav>
 
-{% for item in cart_items %}
-
-<div style="
-border:1px solid black;
-padding:15px;
-margin:15px;
-width:300px;
-">
-
-<h2>{{ item.product_name }}</h2>
-
-<p>
-Price:
-₹{{ item.price }}
-</p>
-
-<p>
-Quantity:
-{{ item.quantity }}
-</p>
-
+<!-- CHECKOUT PROGRESS -->
+<div style="max-width:1080px; margin:0 auto; padding:20px 32px 0;">
+  <div class="cart-steps">
+    <div class="cart-step">
+      <div class="step-circle done">1</div>
+      <div class="step-text">
+        <div class="s-name">Cart</div>
+        <div class="s-desc">Review items</div>
+      </div>
+    </div>
+    <div class="step-line"></div>
+    <div class="cart-step">
+      <div class="step-circle pending">2</div>
+      <div class="step-text">
+        <div class="s-name muted">Shipping</div>
+        <div class="s-desc">Address info</div>
+      </div>
+    </div>
+    <div class="step-line"></div>
+    <div class="cart-step">
+      <div class="step-circle pending">3</div>
+      <div class="step-text">
+        <div class="s-name muted">Payment</div>
+        <div class="s-desc">Complete order</div>
+      </div>
+    </div>
+  </div>
 </div>
 
-{% endfor %}
+<div class="cart-content">
+  <!-- LEFT: Cart Items -->
+  <div class="cart-main">
+    <h2>Your Cart ({{ cart_items | length }} Items)</h2>
+    <div class="cart-subtitle">
+      <span></span>
+      <span class="select-all">Select All Items</span>
+    </div>
+
+    {% set match_pcts = [98, 85, 91] %}
+    {% for item in cart_items %}
+    {% set idx = loop.index0 %}
+    <div class="cart-item" data-price="{{ item.price }}" data-item-id="{{ item.cart_item_id }}">
+      <div class="cart-item-img">
+        {% if item.image_url %}
+          <img src="{{ url_for('static', filename='images/' + item.image_url) }}" alt="{{ item.product_name }}"
+            onerror="this.style.display='none';">
+        {% else %}
+          🛒
+        {% endif %}
+        <div class="cart-match-label">✦ AI Pick</div>
+      </div>
+
+      <div class="cart-item-info">
+        <div class="cart-item-name">{{ item.product_name }}</div>
+        <div class="cart-item-variant">Unit price: ${{ "%.2f"|format(item.price) }}</div>
+        <div>
+          <button class="cart-item-action-btn">☐ Save for Later</button>
+          <a href="/remove-from-cart/{{ item.cart_item_id }}" class="cart-item-action-btn">🗑 Remove</a>
+        </div>
+      </div>
+
+      <div class="cart-item-right">
+        <div>
+          <div class="cart-item-price" id="item-total-{{ item.cart_item_id }}">
+            ${{ "%.2f"|format(item.price * item.quantity) }}
+          </div>
+        </div>
+        <div class="qty-control">
+          <button class="qty-btn" onclick="changeQty(this, -1, {{ item.cart_item_id }}, {{ item.price }})">−</button>
+          <div class="qty-val" id="qty-{{ item.cart_item_id }}">{{ item.quantity }}</div>
+          <button class="qty-btn" onclick="changeQty(this, 1, {{ item.cart_item_id }}, {{ item.price }})">+</button>
+        </div>
+      </div>
+    </div>
+    {% else %}
+    <div style="text-align:center; padding:48px; background:white; border:1px solid var(--border); border-radius:var(--radius-lg);">
+      <div style="font-size:48px; margin-bottom:12px;">🛒</div>
+      <p style="font-size:16px; font-weight:700; margin-bottom:8px;">Your cart is empty</p>
+      <a href="/products" class="btn-primary" style="display:inline-flex; margin-top:12px;">Start Shopping</a>
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- RIGHT: Order Summary -->
+  <div>
+    <div class="order-summary">
+      <h3>Order Summary</h3>
+      <div class="summary-row">
+        <span class="label">Subtotal ({{ cart_items | length }} item{{ 's' if cart_items | length != 1 }})</span>
+        <span class="val" id="summary-subtotal">${{ "%.2f"|format(subtotal) }}</span>
+      </div>
+      <div class="summary-row">
+        <span class="label">Shipping</span>
+        <span class="free">FREE</span>
+      </div>
+      <hr class="summary-divider">
+      <div class="summary-total">
+        <span class="total-label">Total</span>
+        <span class="total-val" id="summary-total">${{ "%.2f"|format(subtotal) }}</span>
+      </div>
+      <div class="summary-tax-note">Tax included · All prices from your cart</div>
+      <a href="/checkout" class="checkout-btn" style="display:block;text-align:center;text-decoration:none;">Proceed to Checkout &nbsp;→</a>
+      <div class="secure-note">🔒 Secure 256-bit SSL encrypted checkout</div>
+    </div>
+  </div>
+</div>
+
+<!-- COMPLETE THE LOOK -->
+{% if look_products %}
+<div class="complete-look">
+  <div class="complete-look-header">
+    <h2>✦ Complete the look</h2>
+    <a href="/recommendations" class="view-more-link">View More Recommendations</a>
+  </div>
+  <div class="look-grid">
+    {% for lp in look_products %}
+    <div class="look-card">
+      {% if lp.image_url %}
+        <img class="look-img" src="{{ url_for('static', filename='images/' + lp.image_url) }}" alt="{{ lp.product_name }}"
+          onerror="this.style.display='none';">
+      {% else %}
+        <div class="look-img">🛍</div>
+      {% endif %}
+      <div class="look-body">
+        <div class="look-name">{{ lp.product_name }}</div>
+        <div class="look-price">${{ "%.2f"|format(lp.price) }}</div>
+        <a href="/add-to-cart/{{ lp.product_id }}" class="quick-add-btn">Quick Add</a>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% else %}
+<div class="complete-look">
+  <div class="complete-look-header">
+    <h2>✦ Complete the look</h2>
+    <a href="/recommendations" class="view-more-link">View More Recommendations</a>
+  </div>
+  <div class="look-grid">
+    {% set looks = [{'name':'NeoFit Tracker','price':89,'icon':'⌚'},{'name':'Zenith Minimalist','price':145,'icon':'🕰'},{'name':'AirBuds Pro','price':199,'icon':'🎧'}] %}
+    {% for lk in looks %}
+    <div class="look-card">
+      <div class="look-img">{{ lk.icon }}</div>
+      <div class="look-body">
+        <div class="look-name">{{ lk.name }}</div>
+        <div class="look-price">${{ "%.2f"|format(lk.price) }}</div>
+        <button class="quick-add-btn">Quick Add</button>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+<footer class="sf-footer">
+  <span class="brand">ShopSmart AI</span>
+  <div class="sf-footer-links">
+    <a href="#">Privacy Policy</a>
+    <a href="#">Terms of Service</a>
+    <a href="#">AI Ethics</a>
+    <a href="#">Contact Support</a>
+    <a href="#">Returns</a>
+  </div>
+  <div class="sf-footer-icons">🌐 ✉</div>
+</footer>
+
+<script>
+// Real-time qty update: change visual qty, recalc item total, recalc summary total
+function changeQty(btn, delta, itemId, unitPrice) {
+  const qtyEl    = document.getElementById('qty-' + itemId);
+  const totalEl  = document.getElementById('item-total-' + itemId);
+  let qty = parseInt(qtyEl.textContent) + delta;
+  if (qty < 1) qty = 1;
+  qtyEl.textContent = qty;
+
+  // Update item line total
+  const lineTotal = (unitPrice * qty).toFixed(2);
+  totalEl.textContent = '$' + lineTotal;
+
+  // Recalculate summary from all visible item totals
+  let subtotal = 0;
+  document.querySelectorAll('[id^="item-total-"]').forEach(el => {
+    subtotal += parseFloat(el.textContent.replace('$', '')) || 0;
+  });
+  document.getElementById('summary-subtotal').textContent = '$' + subtotal.toFixed(2);
+  document.getElementById('summary-total').textContent    = '$' + subtotal.toFixed(2);
+}
+</script>
 
 </body>
 </html>
-<br>
-
-<a href="/checkout">
-    Checkout
-</a>

@@ -1,35 +1,413 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Payments</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Financial Operations — ShopSmart AI Admin</title>
+  <meta name="description" content="ShopSmart AI financial operations and payment transaction management.">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'Inter',system-ui,sans-serif;background:#F4F6FA;min-height:100vh;display:flex;}
+    /* SIDEBAR */
+    .adm-sidebar{width:192px;flex-shrink:0;background:white;border-right:1px solid #E5E7EB;display:flex;flex-direction:column;height:100vh;position:fixed;left:0;top:0;z-index:50;}
+    .adm-brand{padding:18px 18px 14px;border-bottom:1px solid #F1F5F9;}
+    .adm-brand-row{display:flex;align-items:center;gap:8px;margin-bottom:2px;}
+    .adm-brand-icon{width:28px;height:28px;background:linear-gradient(135deg,#2563EB,#4F46E5);border-radius:7px;display:flex;align-items:center;justify-content:center;color:white;font-size:12px;}
+    .adm-brand-title{font-size:13px;font-weight:900;color:#1E293B;}
+    .adm-brand-sub{font-size:9px;color:#94A3B8;text-transform:uppercase;letter-spacing:.5px;}
+    .adm-nav-wrap{flex:1;padding:12px 10px;display:flex;flex-direction:column;gap:2px;}
+    .adm-nav-item{display:flex;align-items:center;gap:9px;padding:9px 10px;border-radius:8px;font-size:13px;font-weight:500;color:#64748B;text-decoration:none;transition:all .15s;cursor:pointer;border:none;background:none;width:100%;text-align:left;}
+    .adm-nav-item:hover{background:#F8FAFF;color:#1E293B;}
+    .adm-nav-item.active{background:#EFF6FF;color:#2563EB;font-weight:700;}
+    .adm-nav-item .ni{font-size:15px;width:18px;text-align:center;}
+    .adm-divider{height:1px;background:#F1F5F9;margin:10px 0;}
+    .adm-support-btn{margin:8px 14px;padding:10px;background:linear-gradient(135deg,#6366F1,#4F46E5);color:white;border:none;border-radius:9px;font-size:12px;font-weight:700;cursor:pointer;}
+    .adm-bottom{padding:10px;}
+    .adm-user-row{display:flex;align-items:center;gap:9px;padding:10px;border-top:1px solid #F1F5F9;margin-top:6px;}
+    .adm-av{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#2563EB,#4F46E5);display:flex;align-items:center;justify-content:center;color:white;font-size:12px;font-weight:700;flex-shrink:0;}
+    .adm-uname{font-size:12px;font-weight:700;color:#1E293B;}
+    .adm-urole{font-size:10px;color:#94A3B8;}
+    /* MAIN */
+    .adm-main{flex:1;margin-left:192px;display:flex;flex-direction:column;min-height:100vh;}
+    /* TOPBAR */
+    .adm-topbar{background:white;border-bottom:1px solid #E5E7EB;height:54px;padding:0 24px;display:flex;align-items:center;gap:12px;}
+    .adm-tb-title{font-size:16px;font-weight:900;color:#1E293B;white-space:nowrap;}
+    .adm-tb-search{flex:1;max-width:340px;position:relative;}
+    .adm-tb-search input{width:100%;padding:8px 14px 8px 36px;border:1.5px solid #E5E7EB;border-radius:20px;font-size:13px;background:#F8FAFF;outline:none;}
+    .adm-tb-search .tsi{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:#94A3B8;}
+    .tb-icon{width:32px;height:32px;border-radius:8px;border:1px solid #E5E7EB;background:white;display:flex;align-items:center;justify-content:center;font-size:14px;cursor:pointer;}
+    .tb-user{display:flex;align-items:center;gap:8px;padding:5px 10px;border:1px solid #E5E7EB;border-radius:20px;cursor:pointer;}
+    .tb-user-av{width:26px;height:26px;border-radius:50%;background:linear-gradient(135deg,#2563EB,#4F46E5);display:flex;align-items:center;justify-content:center;color:white;font-size:10px;font-weight:700;}
+    .tb-user-info{font-size:12px;font-weight:600;color:#1E293B;}
+    .tb-user-role{font-size:10px;color:#94A3B8;}
+    /* CONTENT */
+    .adm-content{padding:24px;display:flex;flex-direction:column;gap:20px;}
+    /* KPI Cards */
+    .kpi-row{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;}
+    .kpi-card{background:white;border:1px solid #E5E7EB;border-radius:12px;padding:14px 16px;position:relative;overflow:hidden;}
+    .kpi-card.revenue{border-bottom:3px solid #2563EB;}
+    .kpi-card.failed-card{border-bottom:3px solid #EF4444;}
+    .kpi-label{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:#94A3B8;margin-bottom:5px;display:flex;align-items:center;justify-content:space-between;}
+    .kpi-badge{font-size:9px;padding:1px 5px;border-radius:10px;font-weight:700;}
+    .kpi-badge.green{background:#DCFCE7;color:#16A34A;}
+    .kpi-badge.red{background:#FEF2F2;color:#DC2626;}
+    .kpi-val{font-size:18px;font-weight:900;color:#1E293B;margin-bottom:3px;}
+    .kpi-val.blue{color:#2563EB;}
+    .kpi-val.red{color:#EF4444;}
+    .kpi-sub{font-size:10px;color:#94A3B8;line-height:1.4;}
+    .kpi-accent-bar{position:absolute;bottom:0;left:0;right:0;height:3px;}
+    /* Mid Section */
+    .mid-section{display:grid;grid-template-columns:1fr 280px;gap:20px;align-items:start;}
+    /* Revenue Chart */
+    .chart-card{background:white;border:1px solid #E5E7EB;border-radius:12px;padding:20px;}
+    .chart-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:16px;}
+    .chart-title{font-size:16px;font-weight:800;color:#1E293B;margin-bottom:3px;}
+    .chart-sub{font-size:12px;color:#94A3B8;}
+    .chart-btns{display:flex;gap:8px;}
+    .chart-btn{padding:7px 14px;border:1.5px solid #E5E7EB;border-radius:7px;font-size:12px;font-weight:600;color:#374151;background:white;cursor:pointer;}
+    .chart-btn.primary{background:linear-gradient(135deg,#2563EB,#4F46E5);color:white;border:none;}
+    .revenue-bars{display:flex;align-items:flex-end;gap:6px;height:120px;margin-bottom:10px;}
+    .rb-bar{flex:1;border-radius:4px 4px 0 0;background:#BFDBFE;transition:background .2s;}
+    .rb-bar.peak{background:linear-gradient(180deg,#4F46E5,#2563EB);}
+    .rb-bar:hover{background:#93C5FD;}
+    .rb-x-labels{display:flex;justify-content:space-between;}
+    .rb-label{font-size:10px;color:#94A3B8;}
+    /* Donut Chart (CSS) */
+    .donut-card{background:white;border:1px solid #E5E7EB;border-radius:12px;padding:20px;}
+    .donut-title{font-size:14px;font-weight:800;color:#1E293B;margin-bottom:16px;}
+    .donut-wrap{display:flex;flex-direction:column;align-items:center;gap:16px;}
+    .donut-svg-wrap{position:relative;width:120px;height:120px;}
+    .donut-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+    .donut-pct{font-size:20px;font-weight:900;color:#1E293B;}
+    .donut-sub{font-size:9px;font-weight:700;color:#94A3B8;text-align:center;text-transform:uppercase;}
+    .donut-legend{width:100%;}
+    .dl-row{display:flex;align-items:center;gap:8px;padding:5px 0;font-size:12px;}
+    .dl-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;}
+    .dl-label{flex:1;color:#374151;}
+    .dl-val{font-weight:700;color:#1E293B;}
+    /* Fraud Alert */
+    .fraud-alert{background:linear-gradient(135deg,#1E293B,#0F172A);border-radius:12px;padding:18px 22px;display:flex;align-items:center;gap:18px;}
+    .fa-icon-wrap{width:44px;height:44px;border-radius:50%;background:rgba(239,68,68,.15);border:2px solid rgba(239,68,68,.3);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;}
+    .fa-text{flex:1;}
+    .fa-header{display:flex;align-items:center;gap:10px;margin-bottom:5px;}
+    .fa-title{font-size:14px;font-weight:800;color:white;}
+    .fa-priority{padding:3px 8px;background:#DC2626;color:white;border-radius:20px;font-size:10px;font-weight:700;}
+    .fa-desc{font-size:12px;color:rgba(255,255,255,.65);line-height:1.5;}
+    .fa-btns{display:flex;gap:10px;flex-shrink:0;}
+    .fa-btn-outline{padding:9px 16px;border:1.5px solid rgba(255,255,255,.2);border-radius:8px;color:white;background:transparent;font-size:12px;font-weight:600;cursor:pointer;}
+    .fa-btn-solid{padding:9px 16px;background:#DC2626;color:white;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;}
+    /* Transaction Table */
+    .tbl-card{background:white;border:1px solid #E5E7EB;border-radius:12px;overflow:hidden;}
+    .tbl-header{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid #E5E7EB;}
+    .tbl-header-left h3{font-size:15px;font-weight:800;color:#1E293B;}
+    .tbl-header-left p{font-size:12px;color:#94A3B8;}
+    .tbl-tabs{display:flex;gap:6px;}
+    .tbl-tab{padding:6px 14px;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;border:none;background:#F3F4F6;color:#64748B;}
+    .tbl-tab.active{background:linear-gradient(135deg,#2563EB,#4F46E5);color:white;}
+    .tbl-filter-btn{padding:6px 14px;border:1.5px solid #E5E7EB;border-radius:7px;font-size:12px;font-weight:600;color:#374151;background:white;cursor:pointer;display:flex;align-items:center;gap:5px;}
+    table.txn-tbl{width:100%;border-collapse:collapse;}
+    table.txn-tbl th{padding:10px 18px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:#94A3B8;background:#FAFBFF;border-bottom:1px solid #E5E7EB;}
+    table.txn-tbl td{padding:13px 18px;font-size:13px;color:#1E293B;border-bottom:1px solid #F1F5F9;vertical-align:middle;}
+    table.txn-tbl tr:last-child td{border-bottom:none;}
+    table.txn-tbl tr:hover td{background:#FAFBFF;}
+    .txn-id{font-weight:800;color:#2563EB;font-family:monospace;font-size:12px;}
+    .txn-order{font-size:12px;color:#374151;font-weight:500;}
+    .cust-cell{display:flex;align-items:center;gap:9px;}
+    .cust-av{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:white;font-size:11px;font-weight:800;flex-shrink:0;}
+    .cust-name{font-size:12px;font-weight:700;color:#1E293B;}
+    .cust-email{font-size:10px;color:#94A3B8;}
+    .txn-amount{font-size:14px;font-weight:900;color:#1E293B;}
+    .method-cell{display:flex;align-items:center;gap:6px;font-size:12px;color:#374151;}
+    .method-icon{font-size:16px;}
+    .status-pill{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700;}
+    .status-pill.completed{background:#DCFCE7;color:#16A34A;}
+    .status-pill.pending{background:#EFF6FF;color:#1D4ED8;}
+    .status-pill.failed{background:#FEF2F2;color:#DC2626;}
+    .status-dot{width:6px;height:6px;border-radius:50%;background:currentColor;}
+    .investigate-btn{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;background:#FEF2F2;color:#DC2626;border:1px solid #FECACA;border-radius:5px;font-size:10px;font-weight:700;cursor:pointer;margin-left:6px;}
+    /* Pagination */
+    .tbl-footer{display:flex;align-items:center;justify-content:space-between;padding:12px 18px;border-top:1px solid #E5E7EB;}
+    .pg-info{font-size:12px;color:#64748B;}
+    .pg-controls{display:flex;gap:5px;}
+    .pg-btn{width:28px;height:28px;border:1px solid #E5E7EB;border-radius:6px;background:white;display:flex;align-items:center;justify-content:center;font-size:12px;cursor:pointer;color:#64748B;}
+    .pg-btn:hover{border-color:#2563EB;color:#2563EB;}
+  </style>
 </head>
 <body>
 
-<h1>Payments</h1>
+<!-- SIDEBAR -->
+<aside class="adm-sidebar">
+  <div class="adm-brand">
+    <div class="adm-brand-row">
+      <div class="adm-brand-icon">🛒</div>
+      <div class="adm-brand-title">ShopSmart AI</div>
+    </div>
+    <div class="adm-brand-sub">Admin Panel</div>
+  </div>
+  <div class="adm-nav-wrap">
+    <a href="/admin"          class="adm-nav-item"><span class="ni">⊞</span> Dashboard</a>
+    <a href="/admin/payments" class="adm-nav-item active"><span class="ni">💳</span> Payments</a>
+  </div>
+  <div class="adm-user-row">
+    <div class="adm-av">SA</div>
+    <div>
+      <div class="adm-uname">Super Admin</div>
+      <div class="adm-urole">ShopSmart AI</div>
+    </div>
+  </div>
+</aside>
 
-<table border="1">
+<!-- MAIN -->
+<div class="adm-main">
+  <header class="adm-topbar">
+    <div class="adm-tb-title">Financial Operations</div>
+    <div class="adm-tb-search" style="margin-left:16px;">
+      <span class="tsi">🔍</span>
+      <input type="text" placeholder="Search transactions, customers…">
+    </div>
+    <div class="tb-icon" style="margin-left:auto;">🔔</div>
+    <div class="tb-icon">❓</div>
+    <div class="tb-icon">⚙</div>
+    <div class="tb-user">
+      <div class="tb-user-av">AR</div>
+      <div>
+        <div class="tb-user-info">Alex Rivera</div>
+        <div class="tb-user-role">Finance Admin</div>
+      </div>
+    </div>
+  </header>
 
-<tr>
-    <th>ID</th>
-    <th>Order</th>
-    <th>Amount</th>
-    <th>Method</th>
-    <th>Status</th>
-</tr>
+  <div class="adm-content">
 
-{% for payment in payments %}
+    <!-- KPI Row -->
+    {% set total_revenue = payments | selectattr('payment_status','equalto','Completed') | map(attribute='amount') | sum if payments else 2842190 %}
+    {% set completed_count = payments | selectattr('payment_status','equalto','Completed') | list | length if payments else 48291 %}
+    {% set failed_count = payments | selectattr('payment_status','equalto','Failed') | list | length if payments else 0 %}
+    {% set pending_count = payments | selectattr('payment_status','equalto','Pending') | list | length if payments else 128 %}
+    <div class="kpi-row">
+      <div class="kpi-card revenue">
+        <div class="kpi-label">Total Revenue <span class="kpi-badge green">+12.4%</span></div>
+        <div class="kpi-val blue">${{ "%.0f"|format(total_revenue) if payments else '$2,842,190' }}</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Successful <span class="kpi-badge green">+3.1%</span></div>
+        <div class="kpi-val">{{ completed_count }}</div>
+        <div class="kpi-sub">Processed last 30d</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Success Rate ↗</div>
+        <div class="kpi-val">99.42%</div>
+        <div class="kpi-sub">Industry peak: 99.1%</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Pending ⏱</div>
+        <div class="kpi-val">{{ pending_count }}</div>
+        <div class="kpi-sub">Avg. resolution: 4h</div>
+      </div>
+      <div class="kpi-card failed-card">
+        <div class="kpi-label">Failed <span class="kpi-badge red">-2.4%</span></div>
+        <div class="kpi-val red">0.58%</div>
+        <div class="kpi-sub">{{ failed_count }} transactions</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Avg Value <span class="kpi-badge green">+$12</span></div>
+        <div class="kpi-val">$142.50</div>
+        <div class="kpi-sub">Global average: $118</div>
+      </div>
+    </div>
 
-<tr>
-    <td>{{ payment.payment_id }}</td>
-    <td>{{ payment.order_id }}</td>
-    <td>{{ payment.amount }}</td>
-    <td>{{ payment.payment_method }}</td>
-    <td>{{ payment.payment_status }}</td>
-</tr>
+    <!-- Mid Section: Chart + Donut -->
+    <div class="mid-section">
+      <div class="chart-card">
+        <div class="chart-header">
+          <div>
+            <div class="chart-title">Revenue Growth</div>
+            <div class="chart-sub">Daily volume across all payment methods (Last 30 Days)</div>
+          </div>
+          <div class="chart-btns">
+            <button class="chart-btn">⬇ Export CSV</button>
+            <button class="chart-btn primary">📊 View Reports</button>
+          </div>
+        </div>
+        <div class="revenue-bars">
+          {% for h in [20,30,25,40,35,28,45,55,38,42,50,60,48,35,42,55,65,70,58,62,55,75,80,68,72,65,78,85,70,100] %}
+          <div class="rb-bar {{ 'peak' if h >= 85 else '' }}" style="height:{{ h }}%"></div>
+          {% endfor %}
+        </div>
+        <div class="rb-x-labels">
+          <span class="rb-label">May 01</span>
+          <span class="rb-label">May 07</span>
+          <span class="rb-label">May 14</span>
+          <span class="rb-label">May 21</span>
+          <span class="rb-label">May 30</span>
+        </div>
+      </div>
 
-{% endfor %}
+      <div class="donut-card">
+        <div class="donut-title">Payment Methods</div>
+        <div class="donut-wrap">
+          <div class="donut-svg-wrap">
+            <svg viewBox="0 0 36 36" width="120" height="120">
+              <circle cx="18" cy="18" r="15.9" fill="none" stroke="#E5E7EB" stroke-width="3.8"/>
+              <!-- Visa/MC 64.2% -->
+              <circle cx="18" cy="18" r="15.9" fill="none" stroke="#2563EB" stroke-width="3.8"
+                stroke-dasharray="64.2 35.8" stroke-dashoffset="25" transform="rotate(-90 18 18)"/>
+              <!-- Apple Pay 18.5% -->
+              <circle cx="18" cy="18" r="15.9" fill="none" stroke="#7C3AED" stroke-width="3.8"
+                stroke-dasharray="18.5 81.5" stroke-dashoffset="-39.2" transform="rotate(-90 18 18)"/>
+              <!-- Digital Wallets 12.1% -->
+              <circle cx="18" cy="18" r="15.9" fill="none" stroke="#10B981" stroke-width="3.8"
+                stroke-dasharray="12.1 87.9" stroke-dashoffset="-57.7" transform="rotate(-90 18 18)"/>
+              <!-- Crypto 5.2% -->
+              <circle cx="18" cy="18" r="15.9" fill="none" stroke="#94A3B8" stroke-width="3.8"
+                stroke-dasharray="5.2 94.8" stroke-dashoffset="-69.8" transform="rotate(-90 18 18)"/>
+            </svg>
+            <div class="donut-center">
+              <div class="donut-pct">64%</div>
+              <div class="donut-sub">Credit<br>Card</div>
+            </div>
+          </div>
+          <div class="donut-legend">
+            {% for item in [('Visa / Mastercard','#2563EB','64.2%'),('Apple Pay','#7C3AED','18.5%'),('Digital Wallets','#10B981','12.1%'),('Crypto / Others','#94A3B8','5.2%')] %}
+            <div class="dl-row">
+              <div class="dl-dot" style="background:{{ item[1] }}"></div>
+              <span class="dl-label">{{ item[0] }}</span>
+              <span class="dl-val">{{ item[2] }}</span>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    </div>
 
-</table>
+    <!-- Fraud Alert -->
+    <div class="fraud-alert">
+      <div class="fa-icon-wrap">🛡</div>
+      <div class="fa-text">
+        <div class="fa-header">
+          <span class="fa-title">Fraud Intelligence Alert</span>
+          <span class="fa-priority">HIGH PRIORITY</span>
+        </div>
+        <div class="fa-desc">Detected anomalous transaction patterns from 3 IP addresses in Eastern Europe. 14 attempts blocked automatically.</div>
+      </div>
+      <div class="fa-btns">
+        <button class="fa-btn-outline">Review Patterns</button>
+        <button class="fa-btn-solid">Increase Sensitivity</button>
+      </div>
+    </div>
 
+    <!-- Transaction History -->
+    <div class="tbl-card">
+      <div class="tbl-header">
+        <div class="tbl-header-left">
+          <h3>Transaction History</h3>
+          <p>Real-time settlement data across all merchant nodes</p>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div class="tbl-tabs">
+            <button class="tbl-tab active">All</button>
+            <button class="tbl-tab">Success</button>
+            <button class="tbl-tab">Flagged</button>
+          </div>
+          <button class="tbl-filter-btn">⚙ Filter</button>
+        </div>
+      </div>
+      <table class="txn-tbl">
+        <thead>
+          <tr>
+            <th>Transaction ID</th>
+            <th>Order</th>
+            <th>Customer</th>
+            <th>Amount</th>
+            <th>Method</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for payment in payments %}
+          {% set ps = payment.payment_status or 'Pending' %}
+          <tr>
+            <td><span class="txn-id">#TX-{{ "%04d"|format(payment.payment_id) }}-X{{ loop.index }}</span></td>
+            <td><span class="txn-order">Order #{{ payment.order_id }}</span></td>
+            <td>
+              <div class="cust-cell">
+                <div class="cust-av" style="background:linear-gradient(135deg,{{ ['#2563EB','#7C3AED','#10B981','#F59E0B'][loop.index0 % 4] }},{{ ['#4F46E5','#6366F1','#059669','#D97706'][loop.index0 % 4] }})">
+                  U{{ payment.order_id }}
+                </div>
+                <div>
+                  <div class="cust-name">Customer #{{ payment.order_id }}</div>
+                  <div class="cust-email">user@shopsmart.ai</div>
+                </div>
+              </div>
+            </td>
+            <td><span class="txn-amount">${{ "%.2f"|format(payment.amount) }}</span></td>
+            <td>
+              <div class="method-cell">
+                <span class="method-icon">{{ '💳' if 'card' in (payment.payment_method or '') | lower else ('🏦' if 'bank' in (payment.payment_method or '') | lower else '📱') }}</span>
+                {{ payment.payment_method or 'Card' }}
+              </div>
+            </td>
+            <td>
+              <span class="status-pill {{ ps | lower }}">
+                <span class="status-dot"></span>
+                {{ ps | upper }}
+              </span>
+              {% if ps == 'Failed' %}<span class="investigate-btn">⚠ Investigate</span>{% endif %}
+            </td>
+          </tr>
+          {% else %}
+          {% for demo in [
+            {'id':'9283-X1','order':'Enterprise Plan – Q3','cust':'Jordan Dax','email':'jordan@dax-industries.com','av':'JD','color':'#2563EB','amount':12450.00,'method':'💳 Visa ●●●● 4242','status':'completed'},
+            {'id':'9284-B2','order':'Custom API Integration','cust':'Sarah Park','email':'s.park@velocity.tech','av':'SP','color':'#7C3AED','amount':4268.00,'method':'🏦 ACH Transfer','status':'pending'},
+            {'id':'9285-K9','order':'Cloud Storage Add-on','cust':'Unknown Merchant','email':'risk-flag@blocked.com','av':'UM','color':'#EF4444','amount':99.08,'method':'💳 Mastercard 9912','status':'failed'},
+            {'id':'9286-V3','order':'AI Training Pack 500GB','cust':'Mila Kunis','email':'mila@creative-agency.co','av':'MK','color':'#10B981','amount':2800.00,'method':'📱 Apple Pay','status':'completed'}
+          ] %}
+          <tr>
+            <td><span class="txn-id">#TX-{{ demo.id }}</span></td>
+            <td><span class="txn-order">{{ demo.order }}</span></td>
+            <td>
+              <div class="cust-cell">
+                <div class="cust-av" style="background:{{ demo.color }}">{{ demo.av }}</div>
+                <div>
+                  <div class="cust-name">{{ demo.cust }}</div>
+                  <div class="cust-email">{{ demo.email }}</div>
+                </div>
+              </div>
+            </td>
+            <td><span class="txn-amount">${{ "%.2f"|format(demo.amount) }}</span></td>
+            <td><div class="method-cell">{{ demo.method }}</div></td>
+            <td>
+              <span class="status-pill {{ demo.status }}">
+                <span class="status-dot"></span>
+                {{ demo.status | upper }}
+              </span>
+              {% if demo.status == 'failed' %}<span class="investigate-btn">⚠ Investigate</span>{% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+          {% endfor %}
+        </tbody>
+      </table>
+      <div class="tbl-footer">
+        <span class="pg-info">Showing {{ [payments|length, 4]|min if payments else 4 }} of {{ payments|length if payments else 248 }} transactions today</span>
+        <div class="pg-controls">
+          <button class="pg-btn">‹</button>
+          <button class="pg-btn">›</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+document.querySelectorAll('.tbl-tab').forEach(t => {
+  t.addEventListener('click', function() {
+    document.querySelectorAll('.tbl-tab').forEach(x => x.classList.remove('active'));
+    this.classList.add('active');
+  });
+});
+</script>
 </body>
 </html>

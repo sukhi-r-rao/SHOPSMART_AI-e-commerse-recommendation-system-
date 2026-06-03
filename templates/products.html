@@ -1,134 +1,263 @@
 <!DOCTYPE html>
-<html>
-
+<html lang="en">
 <head>
-    <title>ShopSmart AI Products</title>
-
-    <style>
-
-        body{
-            font-family: Arial, sans-serif;
-            background-color: #f5f5f5;
-            margin: 0;
-            padding: 20px;
-        }
-
-        h1{
-            text-align: center;
-            color: #333;
-        }
-
-        .products-container{
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-            gap: 25px;
-            margin-top: 30px;
-        }
-
-        .card{
-            background: white;
-            width: 280px;
-            border-radius: 10px;
-            box-shadow: 0px 3px 10px rgba(0,0,0,0.15);
-            overflow: hidden;
-            transition: transform 0.3s;
-        }
-
-        .card:hover{
-            transform: translateY(-5px);
-        }
-
-        .card img{
-            width: 100%;
-            height: 250px;
-            object-fit: cover;
-        }
-
-        .card-content{
-            padding: 15px;
-        }
-
-        .card h2{
-            margin: 0;
-            color: #222;
-        }
-
-        .price{
-            font-size: 22px;
-            color: green;
-            font-weight: bold;
-            margin-top: 10px;
-        }
-
-        .description{
-            color: #555;
-            margin-top: 10px;
-            min-height: 50px;
-        }
-
-        .btn{
-            width: 100%;
-            padding: 12px;
-            border: none;
-            background: #007bff;
-            color: white;
-            font-size: 16px;
-            cursor: pointer;
-            border-radius: 5px;
-            margin-top: 15px;
-        }
-
-        .btn:hover{
-            background: #0056b3;
-        }
-
-    </style>
-
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Curated Essentials — ShopSmart AI</title>
+  <meta name="description" content="Browse AI-curated products personalized for you on ShopSmart AI.">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
-
 <body>
 
-    <h1>🛒 ShopSmart AI Products</h1>
+<div class="app-layout">
 
-    <div class="products-container">
+  <!-- ======= SIDEBAR ======= -->
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <div class="sidebar-brand-icon">✦</div>
+      <div class="sidebar-brand-text">
+        <div class="brand-name">ShopSmart AI</div>
+        <div class="brand-sub">Merchant Portal</div>
+      </div>
+    </div>
+    <nav class="sidebar-nav">
+      <a href="/profile" class="sidebar-nav-item">
+        <span class="nav-icon">⊞</span> Home
+      </a>
+      <a href="#" class="sidebar-nav-item">
+        <span class="nav-icon">📦</span> My Orders
+      </a>
+      <a href="/wishlist" class="sidebar-nav-item">
+        <span class="nav-icon">🤍</span> Wishlist
+      </a>
+      <a href="/cart" class="sidebar-nav-item">
+        <span class="nav-icon">🛒</span> Cart
+      </a>
+      <a href="/recommendations" class="sidebar-nav-item">
+        <span class="nav-icon">✦</span> AI Insights
+      </a>
+    </nav>
+    <button class="sidebar-search-btn" onclick="window.location='/search'">
+      🔍 &nbsp; New Search
+    </button>
+    <div class="sidebar-footer">
+      <a href="#" class="sidebar-nav-item"><span class="nav-icon">⚙</span> Settings</a>
+      <a href="/logout" class="sidebar-nav-item"><span class="nav-icon">↪</span> Logout</a>
+    </div>
+  </aside>
 
-        {% for product in products %}
+  <!-- ======= MAIN ======= -->
+  <div class="app-main">
 
-        <div class="card">
+    <!-- Top Bar -->
+    <header class="app-topbar">
+      <div class="topbar-search">
+        <span class="search-icon">🔍</span>
+        <form action="/search" method="GET" style="width:100%;">
+          <input type="text" name="q" placeholder="Search curated products…" id="topbar-search-input">
+        </form>
+      </div>
+      <div class="topbar-nav">
+        <a href="/profile">Dashboard</a>
+        <a href="#" class="active">Analytics</a>
+        <a href="#">Support</a>
+      </div>
+      <div class="topbar-actions">
+        <a href="/wishlist" class="topbar-icon-btn" title="Wishlist">🤍</a>
+        <a href="/cart" class="topbar-icon-btn" title="Cart" style="position:relative;">
+          🛒
+        </a>
+        <div class="topbar-icon-btn" title="Notifications">🔔</div>
+        <button class="topbar-upgrade">Upgrade</button>
+        <div class="topbar-avatar">U</div>
+      </div>
+    </header>
 
-            <img
-                src="{{ url_for('static', filename='images/' + product.image_url) }}"
-                alt="{{ product.product_name }}"
-            >
+    <!-- Products Area -->
+    <div class="products-layout">
 
-            <div class="card-content">
-
-                <h2>
-    <a href="/product/{{ product.product_id }}">
-        {{ product.product_name }}
-    </a>
-</h2>
-                <div class="price">
-                    ₹{{ product.price }}
-                </div>
-
-                <div class="description">
-                    {{ product.description }}
-                </div>
-
-                <button class="btn">
-                    Add To Cart
-                </button>
-
-            </div>
-
+      <!-- LEFT FILTER SIDEBAR -->
+      <div class="products-sidebar">
+        <div class="filter-section">
+          <div class="filter-title">Categories</div>
+          <div class="filter-item active">
+            <label>
+              <input type="checkbox" checked onchange="filterProducts()"> Electronics
+            </label>
+            <span class="count">{{ products | selectattr('category_name', 'equalto', 'Electronics') | list | length }}</span>
+          </div>
+          <div class="filter-item">
+            <label>
+              <input type="checkbox" onchange="filterProducts()"> Home Office
+            </label>
+            <span class="count">{{ products | selectattr('category_name', 'equalto', 'Home Office') | list | length }}</span>
+          </div>
+          <div class="filter-item">
+            <label>
+              <input type="checkbox" onchange="filterProducts()"> Smart Home
+            </label>
+            <span class="count">{{ products | selectattr('category_name', 'equalto', 'Smart Home') | list | length }}</span>
+          </div>
+          <div class="filter-item">
+            <label>
+              <input type="checkbox" onchange="filterProducts()"> All Categories
+            </label>
+            <span class="count">{{ products | length }}</span>
+          </div>
         </div>
 
-        {% endfor %}
+        <div class="filter-section">
+          <div class="filter-title">Price Range</div>
+          <div class="price-range-wrap">
+            <input
+              type="range"
+              class="price-slider"
+              min="0"
+              max="2000"
+              value="2000"
+              id="priceSlider"
+              oninput="updatePrice(this.value)"
+            >
+            <div class="price-inputs">
+              <input type="text" class="price-input" value="$0" id="priceMin">
+              <span class="price-sep">to</span>
+              <input type="text" class="price-input" value="$2000" id="priceMax">
+            </div>
+          </div>
+        </div>
 
-    </div>
+        <div class="filter-section">
+          <div class="filter-title">Ratings</div>
+          <div class="ratings-filter">
+            <div class="stars-row">
+              <span class="star">★</span>
+              <span class="star">★</span>
+              <span class="star">★</span>
+              <span class="star">★</span>
+              <span class="star">★</span>
+            </div>
+            <span style="font-size:13px; color:var(--text-muted);">&amp; Up</span>
+          </div>
+        </div>
+
+        <!-- AI Insight Card -->
+        <div class="ai-insight-card">
+          <div class="ai-title">✦ AI Insights</div>
+          <p>Based on your activity, we recommend looking at <strong>Smart Home</strong> products this week.</p>
+        </div>
+      </div>
+
+      <!-- PRODUCTS MAIN -->
+      <div class="products-main">
+        <div class="products-header">
+          <div>
+            <h1>Curated Essentials</h1>
+            <p>Showing 1–{{ products | length }} of {{ products | length }} products</p>
+          </div>
+          <div class="sort-wrap">
+            <label>Sort by:</label>
+            <select class="sort-select" onchange="sortProducts(this.value)">
+              <option value="recommended">Recommended</option>
+              <option value="price-asc">Price: Low to High</option>
+              <option value="price-desc">Price: High to Low</option>
+              <option value="newest">Newest</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Product Grid -->
+        <div class="products-grid" id="products-grid">
+          {% set smart_tags = ['smart-pick', 'new-arrival', 'top-rec', '', '', '', '', '', ''] %}
+          {% set smart_labels = ['SMART PICK', 'NEW ARRIVAL', 'TOP RECOMMENDATION', '', '', '', '', '', ''] %}
+          {% set tag_icons = ['✦', '★', '✦', '', '', '', '', '', ''] %}
+          {% set ratings = [4.9, 4.8, 5.0, 4.7, 4.9, 4.6, 4.8, 4.7, 4.5] %}
+
+          {% for product in products %}
+          {% set idx = loop.index0 %}
+          <div
+            class="product-card {{ 'featured' if idx == 2 else '' }}"
+            data-price="{{ product.price }}"
+            data-name="{{ product.product_name }}"
+          >
+            <div class="product-image-wrap">
+              {% if product.image_url %}
+                <img
+                  src="{{ url_for('static', filename='images/' + product.image_url) }}"
+                  alt="{{ product.product_name }}"
+                  onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
+                >
+                <div class="product-img-placeholder" style="display:none;">🛍</div>
+              {% else %}
+                <div class="product-img-placeholder">🛍</div>
+              {% endif %}
+              {% if idx < 3 %}
+              <div class="product-tag {{ smart_tags[idx] }}">
+                {{ tag_icons[idx] }} {{ smart_labels[idx] }}
+              </div>
+              {% endif %}
+            </div>
+
+            <div class="product-body">
+              <div class="product-category">
+                <span>{{ product.brand_name | upper if product.brand_name else 'GENERAL' }}</span>
+                <span class="product-rating">
+                  <span class="star-val">★ {{ ratings[idx] }}</span>
+                </span>
+              </div>
+              <div class="product-title">
+                <a href="/product/{{ product.product_id }}" style="color:inherit;">{{ product.product_name }}</a>
+              </div>
+              <div class="product-desc">{{ product.description }}</div>
+              <div class="product-price-row">
+                <div>
+                  <div class="product-price">${{ "%.2f"|format(product.price) }}</div>
+                  {% if idx == 2 %}<div class="product-price-sub">Best Value Guarantee</div>{% endif %}
+                </div>
+                <a href="/add-to-cart/{{ product.product_id }}" class="product-cart-btn" title="Add to Cart">🛒</a>
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+
+        <!-- Pagination -->
+        <div class="pagination">
+          <a href="#" class="page-btn">‹</a>
+          <a href="#" class="page-btn active">1</a>
+          <a href="#" class="page-btn">2</a>
+          <a href="#" class="page-btn">3</a>
+          <span class="page-btn" style="border:none; cursor:default;">…</span>
+          <a href="#" class="page-btn">12</a>
+          <a href="#" class="page-btn">›</a>
+        </div>
+
+      </div><!-- /products-main -->
+    </div><!-- /products-layout -->
+  </div><!-- /app-main -->
+</div><!-- /app-layout -->
+
+<script>
+function updatePrice(val) {
+  document.getElementById('priceMax').value = '$' + val;
+}
+
+function sortProducts(val) {
+  const grid = document.getElementById('products-grid');
+  const cards = Array.from(grid.children);
+  if (val === 'price-asc') {
+    cards.sort((a,b) => parseFloat(a.dataset.price) - parseFloat(b.dataset.price));
+  } else if (val === 'price-desc') {
+    cards.sort((a,b) => parseFloat(b.dataset.price) - parseFloat(a.dataset.price));
+  } else if (val === 'newest') {
+    cards.reverse();
+  }
+  cards.forEach(c => grid.appendChild(c));
+}
+
+function filterProducts() {
+  // Basic frontend filter stub
+}
+</script>
 
 </body>
-
 </html>
