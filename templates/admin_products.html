@@ -186,7 +186,7 @@
         </div>
         <div class="pg-btns">
           <button class="btn-outline-sm">⬇ Export CSV</button>
-          <button class="btn-primary-sm">➕ Add New Product</button>
+          <button class="btn-primary-sm" id="openAddProductModal">➕ Add New Product</button>
         </div>
       </div>
 
@@ -377,12 +377,154 @@
   </div>
 </div>
 
+<!-- ===================== ADD PRODUCT MODAL ===================== -->
+<div id="addProductModal" style="display:none;position:fixed;inset:0;z-index:1000;background:rgba(15,23,42,0.55);backdrop-filter:blur(4px);align-items:center;justify-content:center;">
+  <div style="background:white;border-radius:16px;width:100%;max-width:560px;box-shadow:0 24px 60px rgba(0,0,0,.18);overflow:hidden;margin:16px;">
+    <!-- Modal Header -->
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:20px 24px;border-bottom:1px solid #E5E7EB;background:linear-gradient(135deg,#EFF6FF,#F5F3FF);">
+      <div>
+        <div style="font-size:17px;font-weight:900;color:#1E293B;">➕ Add New Product</div>
+        <div style="font-size:12px;color:#64748B;margin-top:2px;">Fill in the details to add a product to the catalog.</div>
+      </div>
+      <button id="closeAddProductModal" style="width:32px;height:32px;border:1px solid #E5E7EB;border-radius:8px;background:white;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;">✕</button>
+    </div>
+    <!-- Modal Body -->
+    <div style="padding:24px;display:flex;flex-direction:column;gap:16px;max-height:70vh;overflow-y:auto;">
+      <div id="addProductError" style="display:none;background:#FEF2F2;border:1px solid #FECACA;border-radius:8px;padding:10px 14px;font-size:13px;color:#DC2626;font-weight:600;"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+        <div style="grid-column:1/-1;">
+          <label style="font-size:12px;font-weight:700;color:#374151;display:block;margin-bottom:6px;">Product Name *</label>
+          <input id="np_name" type="text" placeholder="e.g. Wireless Earbuds Pro" style="width:100%;padding:9px 13px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:13px;outline:none;transition:.2s;" onfocus="this.style.borderColor='#2563EB'" onblur="this.style.borderColor='#E5E7EB'">
+        </div>
+        <div>
+          <label style="font-size:12px;font-weight:700;color:#374151;display:block;margin-bottom:6px;">Price ($) *</label>
+          <input id="np_price" type="number" min="0" step="0.01" placeholder="0.00" style="width:100%;padding:9px 13px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:13px;outline:none;transition:.2s;" onfocus="this.style.borderColor='#2563EB'" onblur="this.style.borderColor='#E5E7EB'">
+        </div>
+        <div>
+          <label style="font-size:12px;font-weight:700;color:#374151;display:block;margin-bottom:6px;">Stock Quantity</label>
+          <input id="np_stock" type="number" min="0" value="0" style="width:100%;padding:9px 13px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:13px;outline:none;transition:.2s;" onfocus="this.style.borderColor='#2563EB'" onblur="this.style.borderColor='#E5E7EB'">
+        </div>
+        <div>
+          <label style="font-size:12px;font-weight:700;color:#374151;display:block;margin-bottom:6px;">Category</label>
+          <select id="np_category" style="width:100%;padding:9px 13px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:13px;outline:none;background:white;cursor:pointer;">
+            <option value="">— Select Category —</option>
+            {% for cat in categories %}
+            <option value="{{ cat.category_id }}">{{ cat.category_name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div>
+          <label style="font-size:12px;font-weight:700;color:#374151;display:block;margin-bottom:6px;">Brand</label>
+          <select id="np_brand" style="width:100%;padding:9px 13px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:13px;outline:none;background:white;cursor:pointer;">
+            <option value="">— Select Brand —</option>
+            {% for brand in brands %}
+            <option value="{{ brand.brand_id }}">{{ brand.brand_name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div>
+          <label style="font-size:12px;font-weight:700;color:#374151;display:block;margin-bottom:6px;">Status</label>
+          <select id="np_status" style="width:100%;padding:9px 13px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:13px;outline:none;background:white;cursor:pointer;">
+            <option value="Active">Active</option>
+            <option value="Inactive">Inactive</option>
+            <option value="Draft">Draft</option>
+          </select>
+        </div>
+        <div style="grid-column:1/-1;">
+          <label style="font-size:12px;font-weight:700;color:#374151;display:block;margin-bottom:6px;">Image Filename</label>
+          <input id="np_image" type="text" placeholder="e.g. earbuds.jpg (from static/images/)" style="width:100%;padding:9px 13px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:13px;outline:none;transition:.2s;" onfocus="this.style.borderColor='#2563EB'" onblur="this.style.borderColor='#E5E7EB'">
+        </div>
+        <div style="grid-column:1/-1;">
+          <label style="font-size:12px;font-weight:700;color:#374151;display:block;margin-bottom:6px;">Description</label>
+          <textarea id="np_desc" rows="3" placeholder="Product description…" style="width:100%;padding:9px 13px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:13px;outline:none;resize:vertical;font-family:inherit;transition:.2s;" onfocus="this.style.borderColor='#2563EB'" onblur="this.style.borderColor='#E5E7EB'"></textarea>
+        </div>
+      </div>
+    </div>
+    <!-- Modal Footer -->
+    <div style="display:flex;justify-content:flex-end;gap:10px;padding:16px 24px;border-top:1px solid #E5E7EB;background:#FAFBFF;">
+      <button id="cancelAddProduct" style="padding:9px 20px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:13px;font-weight:600;color:#374151;background:white;cursor:pointer;">Cancel</button>
+      <button id="submitAddProduct" style="padding:9px 22px;background:linear-gradient(135deg,#2563EB,#4F46E5);color:white;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;">➕ Add Product</button>
+    </div>
+  </div>
+</div>
+
 <script>
+// Tab switching
 document.querySelectorAll('.tbl-tab').forEach(t => {
   t.addEventListener('click', function() {
     document.querySelectorAll('.tbl-tab').forEach(x => x.classList.remove('active'));
     this.classList.add('active');
   });
+});
+
+// ── Add Product Modal ──
+const modal   = document.getElementById('addProductModal');
+const openBtn = document.getElementById('openAddProductModal');
+const closeBtns = [document.getElementById('closeAddProductModal'), document.getElementById('cancelAddProduct')];
+
+function openModal()  { modal.style.display = 'flex'; }
+function closeModal() { modal.style.display = 'none'; clearForm(); }
+
+function clearForm() {
+  ['np_name','np_price','np_stock','np_category','np_brand','np_status','np_image','np_desc'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el.tagName === 'SELECT') el.selectedIndex = 0;
+    else if (id === 'np_stock') el.value = '0';
+    else el.value = '';
+  });
+  document.getElementById('addProductError').style.display = 'none';
+}
+
+openBtn.addEventListener('click', openModal);
+closeBtns.forEach(b => b.addEventListener('click', closeModal));
+modal.addEventListener('click', e => { if (e.target === modal) closeModal(); });
+
+document.getElementById('submitAddProduct').addEventListener('click', async () => {
+  const btn = document.getElementById('submitAddProduct');
+  const errDiv = document.getElementById('addProductError');
+  errDiv.style.display = 'none';
+
+  const payload = {
+    product_name: document.getElementById('np_name').value.trim(),
+    price:        document.getElementById('np_price').value,
+    stock:        document.getElementById('np_stock').value,
+    category_id:  document.getElementById('np_category').value || null,
+    brand_id:     document.getElementById('np_brand').value || null,
+    status:       document.getElementById('np_status').value,
+    image_url:    document.getElementById('np_image').value.trim(),
+    description:  document.getElementById('np_desc').value.trim(),
+  };
+
+  if (!payload.product_name) { showError('Product name is required.'); return; }
+  if (!payload.price)        { showError('Price is required.'); return; }
+
+  btn.textContent = 'Saving…';
+  btn.disabled = true;
+
+  try {
+    const res  = await fetch('/admin/products/new', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+    if (data.success) {
+      closeModal();
+      location.reload();
+    } else {
+      showError(data.error || 'Something went wrong.');
+    }
+  } catch (e) {
+    showError('Network error. Please try again.');
+  } finally {
+    btn.innerHTML = '➕ Add Product';
+    btn.disabled = false;
+  }
+
+  function showError(msg) {
+    errDiv.textContent = msg;
+    errDiv.style.display = 'block';
+  }
 });
 </script>
 </body>

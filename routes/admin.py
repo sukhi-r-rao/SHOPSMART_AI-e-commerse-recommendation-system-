@@ -299,9 +299,73 @@ def admin_products():
         """
     )
     products = cursor.fetchall()
+
+    cursor.execute("SELECT category_id, category_name FROM categories ORDER BY category_name")
+    categories = cursor.fetchall()
+
+    cursor.execute("SELECT brand_id, brand_name FROM brands ORDER BY brand_name")
+    brands = cursor.fetchall()
+
     cursor.close()
     conn.close()
-    return render_template("admin_products.html", products=products)
+    return render_template("admin_products.html", products=products,
+                           categories=categories, brands=brands)
+
+
+# ====================================
+# CREATE NEW PRODUCT (Admin)
+# ====================================
+@admin.route("/admin/products/new", methods=["POST"])
+def admin_create_product():
+    from flask import request
+
+    if "user_id" not in session:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    data         = request.get_json()
+    product_name = (data.get("product_name") or "").strip()
+    price        = data.get("price")
+    stock        = data.get("stock", 0)
+    category_id  = data.get("category_id") or None
+    brand_id     = data.get("brand_id") or None
+    description  = (data.get("description") or "").strip()
+    image_url    = (data.get("image_url") or "").strip() or None
+    status       = data.get("status", "Active")
+
+    if not product_name:
+        return jsonify({"error": "Product name is required"}), 400
+    if price is None:
+        return jsonify({"error": "Price is required"}), 400
+
+    try:
+        price = float(price)
+        stock = int(stock)
+    except (ValueError, TypeError):
+        return jsonify({"error": "Invalid price or stock value"}), 400
+
+    conn   = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+
+    cursor.execute(
+        """
+        INSERT INTO products (product_name, price, stock, category_id, brand_id,
+                              description, image_url, status)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+        """,
+        (product_name, price, stock, category_id, brand_id,
+         description, image_url, status)
+    )
+    conn.commit()
+    new_id = cursor.lastrowid
+
+    cursor.close()
+    conn.close()
+
+    return jsonify({
+        "success":    True,
+        "product_id": new_id,
+        "message":    f"Product '{product_name}' created successfully!"
+    })
 
 
 # ====================================
